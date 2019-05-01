@@ -29,8 +29,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <xacro:arg name="ur5_enabled" default="$(optenv HUSKY_UR5_ENABLED false)" />
   <xacro:arg name="kinect_enabled" default="false" />
 
-  <xacro:include filename="$(find husky_description)/urdf/husky.urdf.xacro" />
-  <xacro:husky_robot />
+  <!-- <xacro:include filename="$(find husky_description)/urdf/husky.urdf.xacro" /> -->
+  <!-- <xacro:husky_robot /> -->
 
 <!--- Insert Customizations Below -->
 
@@ -41,7 +41,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <origin xyz="-0.08 0 0.007" rpy="0 0 0"/>
     <geometry>
     <mesh filename="package://husky_custom_description/meshes/sensorArch.dae" />
-    </geometry> 
+    </geometry>
    </visual>
   </link>
 
@@ -57,7 +57,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <origin xyz="0 0 0" rpy="0 0 1.5708" />
     <geometry>
     <mesh filename="package://husky_custom_description/meshes/quanergyM8.dae" />
-    </geometry> 
+    </geometry>
    </visual>
   </link>
 
@@ -73,7 +73,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <origin xyz="0 0 0" rpy="0 0 1.5708" />
     <geometry>
     <mesh filename="package://husky_custom_description/meshes/quanergyM8.dae" />
-    </geometry> 
+    </geometry>
    </visual>
   </link>
 
@@ -89,7 +89,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <origin xyz="0 0 -0.032" rpy="0 0 0" />
     <geometry>
     <mesh filename="package://husky_custom_description/meshes/hesaiLiDAR.dae" />
-    </geometry> 
+    </geometry>
    </visual>
   </link>
 
@@ -123,7 +123,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <origin xyz="0 0 0" rpy="3.1415 0 -1.5708" />
     <geometry>
     <mesh filename="package://husky_custom_description/meshes/lms151.dae" />
-    </geometry> 
+    </geometry>
    </visual>
   </link>
 
