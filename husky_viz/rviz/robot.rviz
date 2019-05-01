@@ -7,7 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /Navigation1
-        - /Navigation1/Exploration1
+        - /Navigation1/Exploration1/Exploration Costmap1
       Splitter Ratio: 0.494924009
     Tree Height: 795
   - Class: rviz/Selection
@@ -28,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: PointCloud2
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -81,10 +81,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        camera_init:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         front_bumper_link:
           Alpha: 1
           Show Axes: false
@@ -108,15 +104,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        lidar_sensor:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        lidar_sensor_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         rear_bumper_link:
           Alpha: 1
           Show Axes: false
@@ -128,11 +115,6 @@ Visualization Manager:
           Show Trail: false
           Value: true
         rear_right_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sensorArch:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -258,8 +240,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.36652493
-            Min Value: -0.199211717
+            Max Value: -9999
+            Min Value: 9999
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -315,13 +297,13 @@ Visualization Manager:
         - Class: rviz/Group
           Displays:
             - Class: rviz/Marker
-              Enabled: true
+              Enabled: false
               Marker Topic: /exploration_polygon_marker
               Name: Exploration Marker
               Namespaces:
                 {}
               Queue Size: 100
-              Value: true
+              Value: false
             - Alpha: 0.699999988
               Class: rviz/Map
               Color Scheme: costmap
@@ -332,7 +314,7 @@ Visualization Manager:
               Unreliable: false
               Use Timestamp: false
               Value: true
-          Enabled: true
+          Enabled: false
           Name: Exploration
         - Alpha: 0.699999988
           Class: rviz/Map
@@ -442,14 +424,14 @@ Visualization Manager:
       Use Rainbow: true
       Value: true
     - Class: octomap_rviz_plugin/OccupancyGrid
-      Enabled: true
-      Max. Height Display: inf
+      Enabled: false
+      Max. Height Display: 3.40282347e+38
       Max. Octree Depth: 16
-      Min. Height Display: -inf
+      Min. Height Display: -3.40282347e+38
       Name: OccupancyGrid
       Octomap Topic: /octomap_binary
       Queue Size: 5
-      Value: true
+      Value: false
       Voxel Alpha: 1
       Voxel Coloring: Z-Axis
       Voxel Rendering: Occupied Voxels
@@ -457,13 +439,13 @@ Visualization Manager:
       Class: octomap_rviz_plugin/OccupancyMap
       Color Scheme: map
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Max. Octree Depth: 16
       Name: OccupancyMap
       Octomap Binary Topic: /octomap_binary
       Unreliable: false
       Use Timestamp: false
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
