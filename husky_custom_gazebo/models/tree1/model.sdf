@@ -1,0 +1,25 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='tree1'>
+    <pose frame=''>0 0 0 1.66667 0 0</pose>
+    <link name='link_1'>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://tree1/Tree.obj</uri>
+            <scale>0.5 0.5 0.5</scale>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name='collision'>
+        <geometry>
+          <mesh>
+            <uri>model://tree1/Tree.obj</uri>
+            <scale>0.5 0.5 0.5</scale>
+          </mesh>
+        </geometry>
+      </collision>
+    </link>
+    <static>1</static>
+  </model>
+</sdf>

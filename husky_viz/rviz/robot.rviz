@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Sensing1
+        - /Navigation1
         - /Navigation1/Exploration1
       Splitter Ratio: 0.494924009
     Tree Height: 795
@@ -28,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: LaserScan
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -328,11 +328,11 @@ Visualization Manager:
               Draw Behind: true
               Enabled: true
               Name: Exploration Costmap
-              Topic: /explore_server/explore_costmap/costmap
+              Topic: /projected_map
               Unreliable: false
               Use Timestamp: false
               Value: true
-          Enabled: false
+          Enabled: true
           Name: Exploration
         - Alpha: 0.699999988
           Class: rviz/Map
@@ -440,6 +440,29 @@ Visualization Manager:
       Topic: /topology_map/grid_map
       Unreliable: false
       Use Rainbow: true
+      Value: true
+    - Class: octomap_rviz_plugin/OccupancyGrid
+      Enabled: true
+      Max. Height Display: inf
+      Max. Octree Depth: 16
+      Min. Height Display: -inf
+      Name: OccupancyGrid
+      Octomap Topic: /octomap_binary
+      Queue Size: 5
+      Value: true
+      Voxel Alpha: 1
+      Voxel Coloring: Z-Axis
+      Voxel Rendering: Occupied Voxels
+    - Alpha: 0.699999988
+      Class: octomap_rviz_plugin/OccupancyMap
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Max. Octree Depth: 16
+      Name: OccupancyMap
+      Octomap Binary Topic: /octomap_binary
+      Unreliable: false
+      Use Timestamp: false
       Value: true
   Enabled: true
   Global Options:

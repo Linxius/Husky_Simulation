@@ -13,13 +13,13 @@
   <arg name="pastduration" default="8.0" />
   <arg name="pastviewzoff" default="0.451"/> 
 
-  <arg name="mapmaxrange" default="25" />
+  <arg name="mapmaxrange" default="30" />
   <arg name="mapminz" default="-3.0" />
   <arg name="mapmaxz" default="7.0" />
   <arg name="mapresolution" default="0.2" />
   <arg name="mapframeid" default="odom" />
   <arg name="robotlocalr" default="8.0"/>
-  <arg name="nodemini_rate" default="0.5" />
+  <arg name="nodemini_rate" default="1.0" />
 
   <arg name="shockduration" default="8.0"/>
 
