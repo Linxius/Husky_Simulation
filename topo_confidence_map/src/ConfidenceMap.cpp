@@ -21,8 +21,8 @@ Confidence::Confidence(float f_fSigma,
 	                     m_fWeightDis(0.7),
                          m_fWeightVis(0.3),
 	                      m_fDensityR(0.3),
-                         m_fLenWeight(0.6),
-                       m_fBoundWeight(0.4){
+                         m_fLenWeight(0.1),
+                       m_fBoundWeight(0.9){
 
     //set sigma value
 	SetSigmaValue(f_fSigma);
@@ -1121,11 +1121,13 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 				//check neighboring grids
 				for (int i = 0; i != vGrowNearGridIdx.size(); ++i) {
 					//if the near grid is new input
-					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 2)
+					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 2 &&
+						vConfidenceMap[vGrowNearGridIdx[i]].label == 2)
 						vSeeds.push_back(vGrowNearGridIdx[i]);
 
 					//the near grid is reachable thereby the query ground grids must be reachable too
-					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 1)
+					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 1 &&
+						vConfidenceMap[vGrowNearGridIdx[i]].label == 2)
 						iGrowRes = 1;
 				}//end for int i = 0;i!=vGrowNearGridIdx.size();++i
 				 
