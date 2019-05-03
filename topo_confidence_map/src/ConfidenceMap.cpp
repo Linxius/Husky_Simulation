@@ -18,11 +18,11 @@ Confidence::Confidence(float f_fSigma,
 	                   float f_fGHPRParam,
 	                  float f_fVisTermThr,
 	                  float f_fMinNodeThr):
-	                     m_fWeightDis(0.7),
-                         m_fWeightVis(0.3),
+	                     m_fWeightDis(0.9),
+                         m_fWeightVis(0.1),
 	                      m_fDensityR(0.3),
-                         m_fLenWeight(0.1),
-                       m_fBoundWeight(0.9){
+                         m_fLenWeight(0.6),
+                       m_fBoundWeight(0.4){
 
     //set sigma value
 	SetSigmaValue(f_fSigma);
@@ -439,8 +439,8 @@ Output: the distance value
 Return: a distance value
 Others: This function is the same with Compute1Norm, but it is a static one
 *************************************************/
-std::vector<int>  Confidence::GetRandom(const unsigned int iSize,
-		                                  const int iSampleNums){
+std::vector<int> Confidence::GetRandom(const unsigned int iSize,
+		                               const int iSampleNums){
 
 	//define output vector
 	std::vector<int> vAllValueVec(iSize, 0);
@@ -660,8 +660,8 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 			float fBoundvalue = (m_fSigma - vSearchDis[0]) / m_fSigma;
 			if (fBoundvalue < 0)
 				fBoundvalue = 0.0;
-
-			if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm > fBoundvalue)
+            //record the maximum boundary responde indicating the closest distance
+			if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm < fBoundvalue)
 				vConfidenceMap[vNearGroundIdxs[i]].boundTerm = fBoundvalue;
 
             //also affect the travelable when the robot is too close to wall
@@ -699,15 +699,12 @@ Others: none
 void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	                                          PCLCloudXYZPtr & pNearAllCloud,
 	                                const std::vector<int> & vNearGroundIdxs,
-	                                    const pcl::PointXYZ & oPastViewPoint){ 
-
+	                                    const pcl::PointXYZ & oPastViewPoint,
+	                                                  const int & iNodeTimes){ 
+    
 	//check the point cloud size (down sampling if point clouds is too large)
 	unsigned int iNonGrndPSize = pNearAllCloud->points.size() - vNearGroundIdxs.size();
 	unsigned int iSmplThr = 500000;
-
-	int iSize = vNearGroundIdxs.size();
-
-	int iiSize = pNearAllCloud->points.size();
 
     //if need sampling
 	if(iNonGrndPSize > iSmplThr){
@@ -736,23 +733,27 @@ void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	}//end if iNonGrndPSize > iSmplThr
    
 	//using the GHPR algorithm 
-	GHPR oGHPRer(4.2);
-
+	GHPR oGHPRer(3.7);
+    
 	//**********Measurement item************
 	//compute the visibility based on the history of view points
-	std::vector<int> vVisableIdx = oGHPRer.ComputeVisibility(*pNearAllCloud, oPastViewPoint);
-	    
+	std::vector<bool> vVisableRes = oGHPRer.ComputeVisibility(*pNearAllCloud, oPastViewPoint);
+	
 	//**********Incremental item************
 	//fv(p) = fv(n)  
-	for (int i = 0; i != vVisableIdx.size(); ++i){
-		//if it is a ground point
-		if(vVisableIdx[i] < vNearGroundIdxs.size())
-			//get maximum value of occlusion term
-			vConfidenceMap[vNearGroundIdxs[vVisableIdx[i]]].visiTerm += 1.0;
+	for (int i = 0; i != vNearGroundIdxs.size(); ++i){
+		//if it is a new scanned ground grid
+		//if(vConfidenceMap[vNearGroundIdxs[i]].nodeCount == iNodeTimes){
+		//if it is occlusion and then is labelled
+			if(!vVisableRes[i])//get the occlusion result
+				vConfidenceMap[vNearGroundIdxs[i]].visiTerm = 0.0;
+		//}
 
 	}
-   
-
+    
+	//output the occlusion result of point clouds - for test only
+	//OutputOcclusionClouds(*pNearAllCloud, vVisableRes, oPastViewPoint);
+ 
 }
 
 
@@ -1015,11 +1016,12 @@ void Confidence::ComputeTotalCoffidence(std::vector<ConfidenceValue> & vConfiden
     //                + m_fBoundWeight * vBoundPartValue[i] 
     //                + m_fWeightVis * LinearKernel(vConfidenceMap[iQueryIdx].visibility, m_fVisTermThr);
 
-    float fTotalVal =  m_fLenWeight * vConfidenceMap[iQueryIdx].travelTerm 
-                     + m_fBoundWeight * vConfidenceMap[iQueryIdx].boundTerm;
-			
-	if (vConfidenceMap[iQueryIdx].totalValue < fTotalVal)
-		vConfidenceMap[iQueryIdx].totalValue = fTotalVal;
+    float fTotalVal =  m_fWeightDis * m_fLenWeight * vConfidenceMap[iQueryIdx].travelTerm 
+    	             + m_fWeightDis * m_fBoundWeight * vConfidenceMap[iQueryIdx].boundTerm
+                     + m_fWeightVis * vConfidenceMap[iQueryIdx].visiTerm;
+
+    //total value
+    vConfidenceMap[iQueryIdx].totalValue = fTotalVal;
 
 }
 
@@ -1308,4 +1310,58 @@ void Confidence::Normalization(std::vector<float> & vFeatures){
 }
 
 
+
+/*************************************************
+Function: OutputOcclusionClouds
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+       privare node
+       flag of generating output file
+       original frame value
+Output: none
+Return: none
+Others: the HandFindLocalMinimumlePointClouds is the kernel function
+*************************************************/
+
+void Confidence::OutputOcclusionClouds(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
+	                                            const std::vector<bool> & vVisableRes,
+	                                                  const pcl::PointXYZ & viewpoint){
+
+	std::stringstream sOutPCName;
+
+    //set the current time stamp as a file name
+    //full name 
+    sOutPCName << "/home/ludy/PC_" << ros::Time::now() << ".txt"; 
+
+    //output file
+    std::ofstream oPointCloudFile;
+    oPointCloudFile.open(sOutPCName.str(), std::ios::out | std::ios::app);
+
+
+    //record the point clouds
+    for(int i = 0; i != vCloud.size(); ++i ){
+
+        //output in a txt file
+        //the storage type of output file is x y z time frames right/left_sensor
+        oPointCloudFile << vCloud.points[i].x << " "
+                        << vCloud.points[i].y << " "
+                        << vCloud.points[i].z << " " 
+                        << vVisableRes[i] << " "
+                        << std::endl;
+    }//end for         
+    //write the viewpoint
+    oPointCloudFile << viewpoint.x << " " << viewpoint.y << " " 
+                    << viewpoint.z << " " << 2 << " " << std::endl;
+
+    oPointCloudFile.close();
+
+}
+
+
 }/*namespace*/
+
+

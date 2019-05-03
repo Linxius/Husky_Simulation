@@ -847,7 +847,8 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
     	m_oCnfdnSolver.OcclusionTerm(m_vConfidenceMap,
 	                                   pNearAllClouds,
 	                                 vNearGrndGrdIdxs,
-	                                        oPastView);
+	                                        oPastView,
+	                                     m_iNodeTimes);
 
 
     //compute boundary term
@@ -1125,6 +1126,7 @@ void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
     m_oTrajFile.close();
 
 }
+
 
 
 
