@@ -1,7 +1,9 @@
 <launch>
   <include file="$(find loam_velodyne)/launch/loam_velodyne.launch"/>
   <include file="$(find husky_viz)/launch/view_robot.launch"/>
-  <include file="$(find topo_confidence_map)/launch/mapping.launch"/>
+  <include file="$(find topo_confidence_map)/launch/mapping.launch">
+    <arg name="fileoutputpath" value="/home/lx/tmp/"/>
+  </include>
   <include file="$(find husky_navigation_goals)/launch/send_goal.launch"/>
 
 </launch>
