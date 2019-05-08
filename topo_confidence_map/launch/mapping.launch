@@ -15,7 +15,7 @@
   <arg name="pastduration" default="8.0" />
   <arg name="pastviewzoff" default="0.451"/>
 
-  <arg name="mapmaxrange" default="25" />
+  <arg name="mapmaxrange" default="50" />
   <arg name="mapminz" default="-5.0" />
   <arg name="mapmaxz" default="20.0" />
   <arg name="mapresolution" default="0.2" />

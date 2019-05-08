@@ -79,20 +79,20 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
-    <model name='banana3'>
+    <model name='banana4'>
       <static>1</static>
       <link name='link_0'>
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>model://banana3/meshes/xiangjiaoyuan3.obj</uri>
+              <uri>model://banana4/meshes/xiangjiaoyuan4.obj</uri>
             </mesh>
           </geometry>
         </visual>
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>model://banana3/meshes/xiangjiaoyuan3.obj</uri>
+              <uri>model://banana4/meshes/xiangjiaoyuan4.obj</uri>
             </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -847,7 +847,7 @@
       <real_time>194 277659033</real_time>
       <wall_time>1557215792 993518140</wall_time>
       <iterations>191224</iterations>
-      <model name='banana3'>
+      <model name='banana4'>
         <pose frame=''>6.62382 -1.65248 0 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
