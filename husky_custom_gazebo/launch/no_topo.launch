@@ -4,8 +4,4 @@
 
   <include file="$(find husky_navigation_goals)/launch/send_goal.launch"/>
 
-  <include file="$(find topo_confidence_map)/launch/mapping.launch">
-    <arg name="fileoutputpath" value="/home/lx/tmp/"/>
-  </include>
-
 </launch>
