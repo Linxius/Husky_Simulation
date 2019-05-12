@@ -13,7 +13,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 //#include "ConfidenceMap.h"
-#include "OP.h"
+#include "Astar.h"
+#include "LocalPathOptimization.h"
 
 //octomap related
 //#include <octomap/octomap.h>
@@ -44,14 +45,29 @@ class TopologyMap{
   //Initialize a fixed Grid Map
   void InitializeGridMap(const pcl::PointXYZ & oRobotPos);
 
-  //down sample the point clouds with grid idx
+  //down sample the point clouds with grid idxs
   void SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
-                           std::vector<std::vector<int> > & vPointMapIdx,
-                           int iSmplNum = 3);
+                          std::vector<std::vector<int> > & vPointMapIdx,
+                                                       int iSmplNum = 3);
+
+  //down sampling the point clouds with grid idxs and corresponding labels
+  void SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
+                          std::vector<std::vector<int> > & vPointMapIdx,
+                                        std::vector<int> & vCloudLabels,
+                                                       int iSmplNum = 3);
+
+  
   //*************Traversing / retrieving function*************
 
 
   //extract the point clouds from the given neighboring grids
+  void DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+                                   std::vector<int> & vNearGroundGridIdxs,
+                        pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
+                         pcl::PointCloud<pcl::PointXYZ> & vNearObstClouds,                                           
+                                const std::vector<MapIndex> & vNearByIdxs,
+                                                    const int & iNodeTime);
+
   void DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                         pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
                           pcl::PointCloud<pcl::PointXYZ> & vNearAllClouds,
@@ -182,6 +198,7 @@ class TopologyMap{
   
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pBoundCloud;//boundary point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pObstacleCloud;//obstacle point clouds
+  std::vector<int> m_vObstNodeTimes;//records the acquired times (node times) of each obstacle point
 
   //std::vector<std::vector<int> > m_vGroundPntMapIdx;//ground point index in grid map
   std::vector<std::vector<int> > m_vBoundPntMapIdx;//boundary point index in grid map
@@ -200,9 +217,28 @@ class TopologyMap{
   //a node object
   OP m_oOPSolver;
 
+  //a Astar estimator
+  Astar m_oAstar;
+
+  //a local path optimer
+  PathOptimization oLclPthOptimer;
+
   //some paramters which is no more important
   //the radius which initial the travelable region around robot at original location
   float m_fInitialR;
+
+  //follow anchor path or not
+  //flag indicate the path selection
+  bool m_bAnchorGoalFlag; 
+  
+  //goal point of global path planning
+  pcl::PointXYZ m_oNodeGoal;
+
+  //anchor goals - local path
+  pcl::PointCloud<pcl::PointXYZ> m_vAncherGoals;
+
+  //count visited anchor in a trip
+  int m_iAncherCount;
   
 };
 

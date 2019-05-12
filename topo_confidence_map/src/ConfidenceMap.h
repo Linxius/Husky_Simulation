@@ -6,6 +6,7 @@
 
 #include "GHPR.h"
 #include "ExtendedGridMap.h"
+#include "HausdorffMeasure.h"
 
 #include <stdlib.h>
 #include <time.h> 
@@ -45,6 +46,25 @@ struct Visible{
 	}
 };
 
+
+struct Quality{
+
+    float means;
+	float total;
+	float num;
+	bool seletedflag;
+
+    Quality(){
+
+        means = 0.0;
+	    total = 0.0;
+	    num = 0.0;
+	    seletedflag = false;
+
+    }
+
+};
+
 //status
 struct ConfidenceValue{
 
@@ -55,7 +75,7 @@ struct ConfidenceValue{
 	//bound term
 	Visible visiTerm;
 	//quality
-	float qualTerm;
+	Quality qualTerm;
 	//quality
 	float totalValue;
 
@@ -92,7 +112,7 @@ struct ConfidenceValue{
 		travelTerm = 0.0;//start with 1, which means no need to go there
 		boundTerm = 0.0;//start with 1, which means no need to go there
 		//visiTerm = 1.0;
-		qualTerm = 0.0;
+		//qualTerm = 0.0;
 		totalValue = 0.0;//initial each grid as not need to move there
 		label = 0;//start with nothing
 		travelable = -1;//start with unknown
@@ -226,13 +246,15 @@ public:
 	//	                               const PCLCloudXYZ & vObstacleCloud,
 	//	              const std::vector<std::vector<int>> & vGridObsPsIdx);
 
-	//2. quality term of confidence map
-	/*void QualityTerm(std::vector<ConfidenceValue> & vConfidenceVec,
-		                 const std::vector<int> & vNearByIdxs,
-		                      const PCLCloudXYZ & vAllBoundCloud,
-		   const std::vector<std::vector<int>> & vGridBoundPsIdx,
-		                      const PCLCloudXYZ & vObstacleCloud,
-		     const std::vector<std::vector<int>> & vGridObsPsIdx);*/
+	//4. quality term of confidence map
+	void QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
+		                     const PCLCloudXYZPtr & pObstacleCloud,
+                           const std::vector<int> & vObstNodeTimes,
+            const std::vector<std::vector<int> > & vObstlPntMapIdx,
+		                         const ExtendedGM & oExtendGridMap,
+		                 const std::vector<MapIndex> & vNearByIdxs,
+                                             const int & iNodeTime,
+                                                  int iSmplNum = 5);
 
 
 	//4. Compute the boundary item
@@ -271,6 +293,9 @@ public:
 	void OutputOcclusionClouds(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
 	                                   const std::vector<bool> & vVisableRes,
 	                                         const pcl::PointXYZ & viewpoint);
+
+	void OutputQualityClouds(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
+	                                                const float & fHausRes);
 
 	//*******************Public Data Part********************
 	pcl::PointXYZ oShowCenter;

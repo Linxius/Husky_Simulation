@@ -31,10 +31,12 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_iObstacleFrames(0),
 	                     m_iComputedFrame(0),
 	                     m_iNodeTimes(0),
+	                     m_iAncherCount(0),
 	                     m_iOdomSampingNum(25),
 	                     m_bGridMapReadyFlag(false),
 	                     m_bCoverFileFlag(false),
-	                     m_bOutTrajFileFlag(false){
+	                     m_bOutTrajFileFlag(false),
+	                     m_bAnchorGoalFlag(false){
 
 	//read parameters
 	ReadTopicParams(nodeHandle);
@@ -199,14 +201,25 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 	nodeHandle.param("regiongrow_r", dRegionGrowR, 0.5);
 	m_oGMer.m_vGrowSearchMask.clear();
 	m_oGMer.m_vGrowSearchMask = m_oGMer.GenerateCircleMask(dRegionGrowR);
-
+    
+    //bound region
 	m_oGMer.m_vBoundDefendMask.clear();
     m_oGMer.m_vBoundDefendMask = m_oGMer.GenerateCircleMask(1.5*dRegionGrowR);
 
+    //initial free travelable region
 	double dInitialR;
 	nodeHandle.param("initial_r", dInitialR, 4.5);
     m_oGMer.m_vInitialMask.clear();
 	m_oGMer.m_vInitialMask = m_oGMer.GenerateCircleMask(dInitialR);
+ 
+    //local region for quality measurement
+	m_oGMer.m_vLocalQualityMask.clear();//the local region of dimension based method
+	m_oGMer.m_vLocalQualityMask = m_oGMer.GenerateCircleMask(1.0);
+
+	//a mask to compute astar path neighboring grid
+	float fAstarPathR = dRbtLocalRadius * 0.5;
+	m_oGMer.m_vAstarPathMask.clear();
+	m_oGMer.m_vAstarPathMask = m_oGMer.GenerateCircleMask(fAstarPathR);
 
 	//about confidence feature weight
 	double dTraversWeight;
@@ -278,7 +291,7 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 		}//end i
 
 	}//end j
-
+    
     //get the neighborhood of original coordiante value and initial a rough travelable region
 	std::vector<MapIndex> vOriginalNearIdx;
 	ExtendedGM::CircleNeighborhood(vOriginalNearIdx,
@@ -294,6 +307,9 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 
     //initial op solver
     m_oOPSolver.Initial(oRobotPos, m_oGMer.m_oFeatureMap);
+
+    //initial astar map
+    m_oAstar.InitAstarTravelMap(m_oGMer.m_oFeatureMap);
 
 	m_bGridMapReadyFlag = true;
 
@@ -321,7 +337,60 @@ Output: none
 Return: none
 Others: the HandlePointClouds is the kernel function
 *************************************************/
+void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+	                                          std::vector<int> & vNearGroundGridIdxs,
+                                   pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
+                                    pcl::PointCloud<pcl::PointXYZ> & vNearObstClouds,	                                          
+                                           const std::vector<MapIndex> & vNearByIdxs,
+                                                               const int & iNodeTime){
 
+	//prepare and clear
+	vNearGrndClouds.clear();
+    vNearBndryClouds.clear();
+    vNearObstClouds.clear();
+	vNearGroundGridIdxs.clear();
+
+	//to each nearby grids
+	for (int i = 0; i != vNearByIdxs.size(); ++i) {
+
+		int iNearGridId = vNearByIdxs[i].iOneIdx;
+		//assign to cooresponding point clouds based on its label
+        switch (m_vConfidenceMap[iNearGridId].label){
+
+        	case 1 : //the grid is a obstacle grid
+        	    for (int j = 0; j != m_vObstlPntMapIdx[iNearGridId].size(); ++j){
+        	    	if(m_vObstNodeTimes[m_vObstlPntMapIdx[iNearGridId][j]] == iNodeTime)//if it is recorded at current node time
+        	    		vNearObstClouds.points.push_back(m_pObstacleCloud->points[m_vObstlPntMapIdx[iNearGridId][j]]);
+        	    }//end for
+            break;
+
+            case 2 : //the grid is a ground grid
+                vNearGrndClouds.points.push_back(m_vConfidenceMap[iNearGridId].oCenterPoint);
+        	    vNearGroundGridIdxs.push_back(iNearGridId);
+        	    //if the obstacle is large (perhaps some obstacles above the ground,e.g.,leafs points, high vegetation)
+        	    if(m_vObstlPntMapIdx[iNearGridId].size() > 20){
+        	    	for (int j = 0; j != m_vObstlPntMapIdx[iNearGridId].size(); ++j)
+        	    		vNearObstClouds.points.push_back(m_pObstacleCloud->points[m_vObstlPntMapIdx[iNearGridId][j]]);
+        	    }
+            break;
+
+            case 3 : //the grid is a boundary grid
+                for (int j = 0; j != m_vBoundPntMapIdx[iNearGridId].size(); ++j)
+				    vNearBndryClouds.points.push_back(m_pBoundCloud->points[m_vBoundPntMapIdx[iNearGridId][j]]);
+				for (int j = 0; j != m_vObstlPntMapIdx[iNearGridId].size(); ++j){
+					if(m_vObstNodeTimes[m_vObstlPntMapIdx[iNearGridId][j]] == iNodeTime)//if it is recorded at current node time
+						vNearObstClouds.points.push_back(m_pObstacleCloud->points[m_vObstlPntMapIdx[iNearGridId][j]]);
+        	    }//end for j
+            break;
+
+            default:
+            break;
+        }//end switch 
+
+    }//end for i
+
+}
+//reload without label input
 void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                                   pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
                                     pcl::PointCloud<pcl::PointXYZ> & vNearAllClouds,
@@ -384,7 +453,7 @@ void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndCl
     	vNearAllClouds.push_back(vNearObstClouds.points[i]);
 
 }
-//reload without generating vNearAllClouds
+//reload without generating vNearAllClouds and label
 void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                                   pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
 	                                         std::vector<int> & vNearGroundGridIdxs,
@@ -437,8 +506,8 @@ Return: none
 Others: none
 *************************************************/
 void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
-	                                  std::vector<std::vector<int> > & vPointMapIdx,
-	                                  int iSmplNum){
+	                                 std::vector<std::vector<int> > & vPointMapIdx,
+	                                                                  int iSmplNum){
 
     //point clouds sampling based on the idx vector
 	for(int i = 0; i != vPointMapIdx.size(); ++i){
@@ -473,6 +542,55 @@ void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pClo
 	pCloud->points.clear();
 	for(int i = 0; i != vSmplClouds.size(); ++i)
 		pCloud->points.push_back(vSmplClouds.points[i]);
+
+
+}
+//reload sampling with point number
+void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
+	                                 std::vector<std::vector<int> > & vPointMapIdx,
+	                                               std::vector<int> & vCloudLabels,
+	                                                                  int iSmplNum){
+
+
+
+    //point clouds sampling based on the idx vector
+	for(int i = 0; i != vPointMapIdx.size(); ++i){
+		//retain at least one point in grid
+		if(vPointMapIdx[i].size()){
+
+			std::vector<int> vOneSmplIdx;
+		    //sampling
+			for(int j = 0; j != vPointMapIdx[i].size(); j = j + iSmplNum)
+				vOneSmplIdx.push_back(vPointMapIdx[i][j]);
+			
+            //clear row data and the turn other rows
+            vPointMapIdx[i].clear();
+            for(int j = 0; j != vOneSmplIdx.size(); ++j)
+                vPointMapIdx[i].push_back(vOneSmplIdx[j]);
+
+        }//end if
+
+    }//end for
+
+
+    pcl::PointCloud<pcl::PointXYZ> vSmplClouds;
+    std::vector<int> vSmpCLoudLabels;
+
+    //save each corresponding points
+    for(int i = 0; i != vPointMapIdx.size(); ++i){
+    	for(int j = 0; j != vPointMapIdx[i].size(); ++j){
+			vSmplClouds.push_back(pCloud->points[vPointMapIdx[i][j]]);	
+			vSmpCLoudLabels.push_back(vCloudLabels[vPointMapIdx[i][j]]);
+        }
+	}
+
+    //clear the point vector and save the new sampled points
+	pCloud->points.clear();
+	vCloudLabels.clear();
+	for(int i = 0; i != vSmplClouds.size(); ++i){
+		pCloud->points.push_back(vSmplClouds.points[i]);
+		vCloudLabels.push_back(vSmpCLoudLabels[i]);
+	}
 
 
 }
@@ -546,13 +664,42 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		    	ComputeConfidence(m_vOdomViews.back(), m_vOdomViews.front());
 			}//end else
 		}//end if m_bGridMapReadyFlag
-        
-        //if the robot is close to the target or the robot is standing in place in a long time
-		//if(fRemainDis < 0.5 || fHistoryDis < 0.005){
-        if(m_oOPSolver.NearGoal(m_vOdomShocks, 
-        	                    m_iShockNum,
-        	                    m_iComputedFrame, 2.0, 10)){
+     
+        //if move in local way
+		if(m_bAnchorGoalFlag){
+            //near
+            float fTouchAnchorGoal = false;
+            fTouchAnchorGoal =  m_oOPSolver.NearGoal(m_vOdomShocks,m_iShockNum, m_iComputedFrame, 
+        	                                         m_vAncherGoals[m_iAncherCount], 2.0, 10);
+            //
+            if(fTouchAnchorGoal){
 
+            	m_iAncherCount++;
+
+            	if(m_iAncherCount >= m_vAncherGoals.size()){
+                   m_bAnchorGoalFlag = false;
+                   m_iAncherCount = 0;
+            	}
+
+            }
+
+		}
+        
+		float fTouchNodeGoal = false;
+        //if move in global way
+		if(!m_bAnchorGoalFlag){
+            //check the robot is near the target node
+            //if the robot is close to the target or the robot is standing in place in a long time
+            fTouchNodeGoal =  m_oOPSolver.NearGoal(m_vOdomShocks, 
+        	                                        m_iShockNum,
+        	                                        m_iComputedFrame, 
+        	                                        m_oNodeGoal, 2.0, 10);
+
+		}
+        
+        //if it arrivals at the target node
+        if(fTouchNodeGoal){
+            
 			//get the new nodes
 			std::vector<int> vNewNodeIdx;
 			std::vector<pcl::PointXYZ> vNodeClouds;
@@ -572,28 +719,96 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 				//use branch and bound based method
 				m_oOPSolver.BranchBoundMethod(m_vOdomViews.back(),m_vConfidenceMap);
 		    
-		    //output
+		    //output node
+		    m_oOPSolver.OutputGoalPos(m_oNodeGoal);
+
 		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
 		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
+
+
+		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+
 
             //clear old data of last trip
 		    m_vOdomShocks = std::queue<pcl::PointXYZ>();
 
-		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+		    //if there are still some regions to explore
+            //compute astar path for current target point
+            if(vUnvisitedNodes.size()){
+            	
+            	//update travelable map
+		        m_oAstar.UpdateTravelMap(m_oGMer.m_oFeatureMap, m_vConfidenceMap);
+                //get raw astar path point clouds
+                pcl::PointCloud<pcl::PointXYZ>::Ptr pAstarCloud(new pcl::PointCloud<pcl::PointXYZ>);
+                pcl::PointCloud<pcl::PointXYZ>::Ptr pAttractorCloud(new pcl::PointCloud<pcl::PointXYZ>);
+                std::vector<float> vQualityFeature;
+                
+                //compute astar path
+		        bool bPathOptmFlag = m_oAstar.GetPath(pAttractorCloud, 
+		                                              vQualityFeature,
+		                                              pAstarCloud, 
+	                                                  m_oGMer,
+	                                                  m_vConfidenceMap,
+	                                                  m_vOdomViews.back(), m_oNodeGoal, false);
+
+                //if the goal has a very clear and credible path
+		        if(bPathOptmFlag){
+
+                    pcl::PointCloud<pcl::PointXY>::Ptr pAttractorSeq(new pcl::PointCloud<pcl::PointXY>);
+		            //sort the controls from max to min
+		        
+	                oLclPthOptimer.SortFromBigtoSmall(pAttractorSeq,
+	                                              pAttractorCloud, 
+		                                          vQualityFeature);
+
+	                ////generate new local path
+	                m_vAncherGoals.clear();
+	                
+	                m_bAnchorGoalFlag = oLclPthOptimer.NewLocalPath(m_vAncherGoals,
+	                                                            pAttractorSeq, 
+		                                                        vQualityFeature,
+		                                                        pAstarCloud, 
+	                                                            m_oGMer,
+	                                                            m_vConfidenceMap,1.5, 1);
+
+                    //print to screen
+                    if(m_bAnchorGoalFlag)
+                    	std::cout<<"walking in local curve. "<<std::endl;
+
+		            //PublishPointCloud(*pAttractorCloud);//for test only
+		            //PublishPointCloud(m_vAncherGoals);//for test only
+
+		        }//end if bPathOptmFlag
+
+
+		    }//end if vUnvisitedNodes.size()
             
             //begin the next trip
-		    m_iNodeTimes++;
+            if(m_oOPSolver.CheckNodeTimes())
+            	m_iNodeTimes++;
 		    
 		}//end if m_oOPSolver.NearGoal
 
+		pcl::PointXYZ oRealGoalPoint;
+
         //send generated goal
 		if(m_iNodeTimes > 0){
+			
+            //get goal from achor vector
+            if(m_bAnchorGoalFlag){
+
+            	oRealGoalPoint.x = m_vAncherGoals.points[m_iAncherCount].x;
+                oRealGoalPoint.y = m_vAncherGoals.points[m_iAncherCount].y;
+                oRealGoalPoint.z = m_vAncherGoals.points[m_iAncherCount].z;
+			//get goal from node
+		    }else{
+                oRealGoalPoint.x = m_oNodeGoal.x;
+                oRealGoalPoint.y = m_oNodeGoal.y;
+		        oRealGoalPoint.z = m_oNodeGoal.z;
+		    }
             
-			pcl::PointXYZ oTargetPoint;
-			//get goal
-		    m_oOPSolver.OutputGoalPos(oTargetPoint);
 		    //publish goal
-            PublishGoalOdom(oTargetPoint);
+            PublishGoalOdom(oRealGoalPoint);
         }
 
     }//end if (!(m_iTrajFrameNum % m_iOdomSampingNum))
@@ -731,9 +946,9 @@ void TopologyMap::HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosDa
 		}//end for
 
 
-		if(m_pObstacleCloud->points.size()>3000000){
+		if(m_pBoundCloud->points.size()>3000000){
 			SamplingPointClouds(m_pBoundCloud, m_vBoundPntMapIdx);
-		}//end if if(m_pObstacleCloud->points.size()>X)
+		}//end if if(m_pBoundCloud->points.size()>X)
 
 	}//if m_bGridMapReadyFlag
 
@@ -766,10 +981,14 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 		for (int i = 0; i != vOneOCloud.size(); ++i) {
 			//sampling
 			if (!(i%m_iPCSmplNum)) {
-
+                //if this point is inside the map
 				if (m_oGMer.CheckInSidePoint(vOneOCloud.points[i])) {
-
+                    //if the obstacle cloud 
+                    //save the obstacle point
 					m_pObstacleCloud->points.push_back(vOneOCloud.points[i]);
+					//save the corresponding node times
+					m_vObstNodeTimes.push_back(m_iNodeTimes);
+                    //send point index to grid member
 					int iPointIdx = ExtendedGM::PointoOneDIdx(vOneOCloud.points[i],m_oGMer.m_oFeatureMap);
 					//to point idx
 					m_vObstlPntMapIdx[iPointIdx].push_back(m_iObstacleFrames);
@@ -791,7 +1010,7 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 
 
 		if(m_pObstacleCloud->points.size()>8000000){
-			SamplingPointClouds(m_pObstacleCloud, m_vObstlPntMapIdx);
+			SamplingPointClouds(m_pObstacleCloud, m_vObstlPntMapIdx, m_vObstNodeTimes);
 		}//end if if(m_pObstacleCloud->points.size()>X)
 
 
@@ -877,6 +1096,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 	                         pNearGrndClouds,
     	                     pNearBndryClouds);
 
+
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
@@ -889,6 +1109,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearGrndClouds(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearBndryClouds(new pcl::PointCloud<pcl::PointXYZ>);
+	
     std::vector<int> vNearGrndGrdIdxs;
 
     //find the neighboring point clouds
@@ -907,9 +1128,9 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
     //extract point clouds with different labels, respectively
     DevidePointClouds(*pNearGrndClouds,
-    	              *pNearBndryClouds,
-	                  vNearGrndGrdIdxs,
-                      vNearByIdxs);
+                     *pNearBndryClouds,
+                      vNearGrndGrdIdxs,
+                           vNearByIdxs);
 
     //compute distance term
     m_oCnfdnSolver.DistanceTerm(m_vConfidenceMap,
@@ -925,10 +1146,22 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
     	                     pNearBndryClouds);
 
 
+    //compute quality term
+    m_oCnfdnSolver.QualityTerm(m_vConfidenceMap,
+    	                       m_pObstacleCloud,
+                               m_vObstNodeTimes,
+                              m_vObstlPntMapIdx, 
+		                                m_oGMer,
+		                            vNearByIdxs,
+                                   m_iNodeTimes, 5);
+
+
+
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
 	
+	//output result on screen
 	PublishGridMap();
 
 }
@@ -960,7 +1193,7 @@ void TopologyMap::PublishGridMap(){
 	grid_map::Matrix& gridMapData4 = m_oGMer.m_oFeatureMap["observability"];
 	grid_map::Matrix& gridMapData5 = m_oGMer.m_oFeatureMap["confidence"];
 	grid_map::Matrix& gridMapData6 = m_oGMer.m_oFeatureMap["travelable"];
-	grid_map::Matrix& gridMapData7 = m_oGMer.m_oFeatureMap["label"];
+	grid_map::Matrix& gridMapData7 = m_oGMer.m_oFeatureMap["quality"];
 
 	//initial elevation map and center point clouds
 	for (int i = 0; i != m_oGMer.m_oFeatureMap.getSize()(0); ++i) {//i
@@ -983,9 +1216,10 @@ void TopologyMap::PublishGridMap(){
 		    	gridMapData4(i, j) = m_vConfidenceMap[iGridIdx].visiTerm.value;//.visiTerm
 		    	gridMapData5(i, j) = m_vConfidenceMap[iGridIdx].totalValue;//.totalValue
 		    	gridMapData6(i, j) = m_vConfidenceMap[iGridIdx].travelable;//.travelable
-		    	gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].label;//label
+		    	//gridMapData6(i, j) = m_oAstar.maze[i][j];//test only
+		    	//gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].qualTerm;//quality term
             
-		    }else{
+		   }else{
 		    	
                 //assign limited resultes
 		    	gridMapData1(i, j) = std::numeric_limits<float>::infinity();
@@ -994,9 +1228,12 @@ void TopologyMap::PublishGridMap(){
 		    	gridMapData4(i, j) = std::numeric_limits<float>::infinity();
 		    	gridMapData5(i, j) = std::numeric_limits<float>::infinity();
 		    	gridMapData6(i, j) = std::numeric_limits<float>::infinity();
-		    	gridMapData7(i, j) = std::numeric_limits<float>::infinity();
+		    	//gridMapData7(i, j) = std::numeric_limits<float>::infinity();
 
-		    }//end else
+		   }//end else
+
+            //quality is in boundary and obstacle grid
+		    gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].qualTerm.means;//quality term
 
 		}//end j
 

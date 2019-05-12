@@ -118,6 +118,12 @@ public:
     //a mask intialing the origianl travelable region
 	std::vector<MapIndex> m_vInitialMask;
 
+	//a mask to compute quality of a local region
+	std::vector<MapIndex> m_vLocalQualityMask;
+
+	//a mask to compute astar path neighboring grid
+	std::vector<MapIndex> m_vAstarPathMask;
+
 private:
 
 	//note that the map size is fixed, thus it must be initialied large enough to pick the scene 

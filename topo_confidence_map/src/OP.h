@@ -52,6 +52,16 @@ public:
 	                               float fDisDiffThr = 0.5,
 	                                int iFirstTripThr = 10);
 
+	bool NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
+	                              const int & iShockNumThr,
+                                 const int & iProcessFrame,
+                               const pcl::PointXYZ & oGoal,
+	                               float fDisDiffThr = 0.5,
+	                                int iFirstTripThr = 10);
+
+	//check the nodetime can be increased
+	bool CheckNodeTimes();
+
     //check whether the grid is wide
 	bool IsWideGrid(const std::vector<ConfidenceValue> & vConfidenceMap,
 	                                              const int & iQueryIdx);
@@ -97,6 +107,11 @@ public:
     //branch and bound method to solve op problem
     bool BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 	                       const std::vector<ConfidenceValue> & vConfidenceMap);
+
+    //local path
+    bool LocalPathOptimization(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAttractorCloud, 
+		                       const std::vector<float> & vQualityFeature,
+		                       const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud);
 
 	//Outout the history of traveling nodes
     void OutputPastNodes(std::vector<pcl::PointXYZ> & vOutputNodes);

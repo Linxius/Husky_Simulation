@@ -137,7 +137,7 @@ void ExtendedGM::GenerateMap(const pcl::PointXYZ & oRobotPos){
 	m_oFeatureMap.add("observability", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
 	m_oFeatureMap.add("confidence", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
 	m_oFeatureMap.add("travelable", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
-	m_oFeatureMap.add("label", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
+	m_oFeatureMap.add("quality", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
 
 }
 
@@ -278,8 +278,8 @@ void ExtendedGM::TwoDIdxtoPoint(pcl::PointXYZ & oPoint,
 	oFeatureMap.getPosition(oGridIdx, oGridPos);
 
 	//get position in pcl type
-	oPoint.x = oGridIdx(0);
-	oPoint.y = oGridIdx(1);
+	oPoint.x = oGridPos(0);
+	oPoint.y = oGridPos(1);
 
 }
 //reload a grid_map::Position type output
