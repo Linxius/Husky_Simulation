@@ -1,5 +1,7 @@
 <launch>
   <include file="$(find loam_velodyne)/launch/loam_velodyne.launch"/>
+  <!-- <include file="$(find octomap_mapping)/octomap_sever/launch/octomap_mapping.launch"/> -->
+  <include file="$(find octomap_server)/launch/octomap_mapping.launch"/>
   <include file="$(find husky_viz)/launch/view_robot.launch"/>
 
   <include file="$(find husky_navigation_goals)/launch/send_goal.launch"/>
