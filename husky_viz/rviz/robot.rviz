@@ -6,13 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Sensing1
         - /Sensing1/Odometry1
         - /Sensing1/PointCloud21
-        - /Navigation1
         - /Navigation1/Exploration1
         - /GridMap1
-        - /PointCloud21
       Splitter Ratio: 0.494924009
     Tree Height: 795
   - Class: rviz/Selection
@@ -60,18 +57,116 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_laser_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_init:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_bumper_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        inertial_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        lidar_sensor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        lidar_sensor_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_bumper_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sensorArch:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_chassis_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_plate_front_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        top_plate_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_plate_rear_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        user_rail_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: false
+      Value: true
       Visual Enabled: true
     - Class: rviz/TF
       Enabled: false
@@ -100,10 +195,23 @@ Visualization Manager:
       Displays:
         - Angle Tolerance: 0.100000001
           Class: rviz/Odometry
-          Color: 85; 170; 255
+          Covariance:
+            Orientation:
+              Alpha: 0.5
+              Color: 255; 255; 127
+              Color Style: Unique
+              Frame: Local
+              Offset: 1
+              Scale: 1
+              Value: true
+            Position:
+              Alpha: 0.300000012
+              Color: 204; 51; 204
+              Scale: 1
+              Value: true
+            Value: true
           Enabled: true
           Keep: 10000
-          Length: 0.4
           Name: Odometry
           Position Tolerance: 0.100000001
           Shape:
@@ -118,7 +226,7 @@ Visualization Manager:
             Value: Arrow
           Topic: /odometry/filtered
           Unreliable: false
-          Value: false
+          Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -152,8 +260,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.45054
-            Min Value: -0.192685
+            Max Value: 1.45053995
+            Min Value: -0.192684993
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -246,8 +354,9 @@ Visualization Manager:
           Name: Global Costmap
           Topic: /move_base/global_costmap/costmap
           Unreliable: false
+          Use Timestamp: false
           Value: false
-        - Alpha: 0.7
+        - Alpha: 0.699999988
           Class: rviz/Map
           Color Scheme: costmap
           Draw Behind: false
@@ -255,15 +364,16 @@ Visualization Manager:
           Name: Local Costmap
           Topic: /move_base/local_costmap/costmap
           Unreliable: false
+          Use Timestamp: false
           Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
-          Color: 25; 255; 0
-          Enabled: false
-          Head Diameter: 0.3
-          Head Length: 0.2
-          Length: 0.3
+          Color: 255; 1; 1
+          Enabled: true
+          Head Diameter: 0.300000012
+          Head Length: 0.200000003
+          Length: 0.300000012
           Line Style: Lines
           Line Width: 0.0299999993
           Name: Global Plan
@@ -278,7 +388,7 @@ Visualization Manager:
           Shaft Length: 0.100000001
           Topic: /move_base/NavfnROS/plan
           Unreliable: false
-          Value: false
+          Value: true
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
@@ -389,22 +499,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 29.9856
+      Distance: 42.1276054
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.60285
-        Y: -0.112543
-        Z: -1.43442
+        X: -0.60285002
+        Y: -0.112543002
+        Z: -1.43441999
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.0500000007
+      Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.01
-      Pitch: 0.8048
+      Near Clip Distance: 0.00999999978
+      Pitch: 1.56979632
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.84222
+      Yaw: 3.08222055
     Saved: ~
 Window Geometry:
   Displays:
@@ -421,6 +534,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1600
-  X: 137
-  Y: 193
+  Width: 628
+  X: 645
+  Y: 33
