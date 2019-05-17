@@ -6,19 +6,13 @@ Panels:
       Expanded:
         - /Global Options1
         - /Sensing1
-        - /Sensing1/Odometry1
         - /Sensing1/Odometry1/Shape1
         - /Sensing1/Odometry1/Covariance1/Position1
         - /Sensing1/Odometry1/Covariance1/Orientation1
         - /Sensing1/PointCloud21
         - /Navigation1/Exploration1
-        - /mesh1
-        - /Odometry1
-        - /GridMap1
-        - /PointCloud21
-        - /PointCloud22
-      Splitter Ratio: 0.494924
-    Tree Height: 621
+      Splitter Ratio: 0.494924009
+    Tree Height: 807
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -151,11 +145,19 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        top_plate_front_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         top_plate_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        top_plate_rear_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         user_rail_link:
           Alpha: 1
           Show Axes: false
@@ -212,8 +214,19 @@ Visualization Manager:
           Enabled: true
           Keep: 10000
           Name: Odometry
-          Position Tolerance: 0.1
+          Position Tolerance: 0.100000001
+          Shape:
+            Alpha: 1
+            Axes Length: 1
+            Axes Radius: 0.100000001
+            Color: 85; 170; 255
+            Head Length: 0
+            Head Radius: 0.100000001
+            Shaft Length: 0.300000012
+            Shaft Radius: 0.300000012
+            Value: Arrow
           Topic: /odom_lidar
+          Unreliable: false
           Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
@@ -245,7 +258,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: false
-        - Alpha: 0.300000012
+        - Alpha: 0.800000012
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 7.63649654
@@ -256,8 +269,8 @@ Visualization Manager:
           Class: rviz/PointCloud2
           Color: 255; 255; 255
           Color Transformer: FlatColor
-          Decay Time: 0
-          Enabled: true
+          Decay Time: 2
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 0
@@ -267,14 +280,14 @@ Visualization Manager:
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
-          Size (Pixels): 1
+          Size (Pixels): 2
           Size (m): 0.00999999978
           Style: Points
           Topic: /velodyne_points
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Acceleration properties:
             Acc. vector alpha: 0.5
             Acc. vector color: 85; 0; 255
@@ -426,14 +439,14 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
+        Max Value: 0.583000004
+        Min Value: 0.583000004
         Value: true
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color: 0; 0; 255
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -446,18 +459,18 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.3
-      Style: Flat Squares
+      Size (m): 1
+      Style: Spheres
       Topic: /topology_map/pastnode_clouds
       Unreliable: false
       Use Fixed Frame: true
-      Use rainbow: true
+      Use rainbow: false
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
+        Max Value: 0.583000004
+        Min Value: 0.583000004
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -476,13 +489,43 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.3
-      Style: Flat Squares
+      Size (m): 1
+      Style: Spheres
       Topic: /topology_map/plannode_clouds
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10.5
+        Min Value: -0.300000012
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: AxisColor
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.100000001
+      Style: Flat Squares
+      Topic: /octomap_point_cloud_centers
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -507,30 +550,33 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 39.1103
+      Distance: 74.2783966
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.71508
-        Y: -1.39275
-        Z: -4.03939
+        X: 17.822607
+        Y: -16.1469078
+        Z: 2.99163628
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.0500000007
+      Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.01
-      Pitch: 1.2498
+      Near Clip Distance: 0.00999999978
+      Pitch: 1.4897964
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.05223
+      Yaw: 3.33722687
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1039
+  Height: 1051
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001e2000003b4fc0200000005fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006f00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003f000003b4000000f200ffffff000000010000010f000002ddfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000043000002dd000000bb00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a00000023900fffffffb0000000800540069006d00650100000000000004500000000000000000000001ad000003b400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001d2000003c0fc0200000005fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006f00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003f000003c0000000f200ffffff000000010000010f000002ddfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000043000002dd000000bb00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a00000023900fffffffb0000000800540069006d00650100000000000004500000000000000000000005a7000003c000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -539,6 +585,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1600
-  X: 115
-  Y: 155
+  Width: 1918
+  X: 0
+  Y: 27
