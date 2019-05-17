@@ -1,4 +1,4 @@
-#include "TopologyMap.h"
+#include "RandomWalk.h"
 
 int main(int argc, char** argv){
 

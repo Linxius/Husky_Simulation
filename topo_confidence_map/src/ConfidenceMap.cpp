@@ -542,7 +542,7 @@ std::vector<int> Confidence::GetRandom(const unsigned int iSize,
 	return iRandomVec;
 
 }
-//reload
+
 /*//=================================================================================
 std::vector<int> Confidence::GetRandom(const PCLCloudXYZPtr & pAllTravelCloud,
 	                                                         GridMap & oMaper,

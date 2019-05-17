@@ -142,6 +142,7 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 //reload as a general input
 bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	                              const int & iShockNumThr,
+	                                const int & iNodeTimes,
                                  const int & iProcessFrame,
                                const pcl::PointXYZ & oGoal,
 	                                     float fDisDiffThr,
@@ -159,7 +160,7 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 
     
     //if it is at the orginal point
-	if(m_vAllNodes.size() == 1){
+	if(!iNodeTimes){
         //if the confidence map at original location has been computed enough
         int iRemain = iFirstTripThr - iProcessFrame;
         ROS_INFO("Initial the first goal: remain confidence computed time is: [%d].", iRemain);
@@ -170,7 +171,7 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	}
     
     //normal situation
-	if(m_vAllNodes.size() > 1){
+	if(iNodeTimes){
 		//compute the distance difference between current odom and current target node
 		float fDisDiff = TwoDDistance(oCurrOdomTwoD, oGoal);
 

@@ -79,6 +79,8 @@ struct ConfidenceValue{
 	//quality
 	float totalValue;
 
+	int coverNodeTimes;
+
 	//************details of grid label value in m_vMapGridLabel
     // cover means rewrite if new sematic object appears in this grid
     // 0 nothing or unknown (0 is covered by 1)
@@ -116,6 +118,7 @@ struct ConfidenceValue{
 		totalValue = 0.0;//initial each grid as not need to move there
 		label = 0;//start with nothing
 		travelable = -1;//start with unknown
+		coverNodeTimes = 0;
 		nodeCount = -1;	//start with undone	
 		qualFlag = true;//start with undone
 		oCenterPoint.x = 0.0;//start from 0, which will be re-define in InitializeGridMap
@@ -201,8 +204,9 @@ public:
 	inline pcl::PointXYZ ComputeCenter(const PCLCloudXYZ & vCloud);
 
 	//get random value
-	inline std::vector<int> GetRandom(const unsigned int iSize,
+	static std::vector<int> GetRandom(const unsigned int iSize,
 		                                 const int iSampleNums);
+
 	//static std::vector<int> GetRandom(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAllTravelCloud,
 	//	                                                                 GridMap & oMaper,
 	//	                                                              const int iSampleNums);

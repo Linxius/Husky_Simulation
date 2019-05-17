@@ -54,6 +54,7 @@ public:
 
 	bool NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	                              const int & iShockNumThr,
+	                                const int & iNodeTimes,
                                  const int & iProcessFrame,
                                const pcl::PointXYZ & oGoal,
 	                               float fDisDiffThr = 0.5,
@@ -126,10 +127,7 @@ public:
 
     //some functions for test
     void PrintPlanNodes(const int & iQueryIdx,
-	                    const std::vector<ConfidenceValue> & vConfidenceMap);  
-
-    //all generated nodes
-	std::vector<Node> m_vAllNodes;
+	                    const std::vector<ConfidenceValue> & vConfidenceMap);
 
 private:
 
@@ -143,6 +141,9 @@ private:
 
     //past nodes or nodes has been visited (id)
     std::vector<int> m_vPastNodeIdxs;//note that index is in m_vAllNodes
+
+    //all generated nodes
+	std::vector<Node> m_vAllNodes;
 
 	//branch and bound based method's object
 	BranchBound BBSolver;
