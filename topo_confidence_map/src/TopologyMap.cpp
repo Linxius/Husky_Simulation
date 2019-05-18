@@ -648,7 +648,7 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		m_vOdomViews.push(oOdomPoint);
 		oOdomPoint.z = 0.0;
 		m_vOdomShocks.push(oOdomPoint);
-		OutputTrajectoryFile(oTrajectory);
+		
 
 		//make the sequence size smaller than a value
 		//m_vOdomViews in fact is a history odometry within a given interval
@@ -677,7 +677,8 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		m_iTrajFrameNum = 0;
 		m_iComputedFrame++;
 	}
-
+ 
+    OutputTrajectoryFile(oTrajectory);
 	m_iTrajFrameNum++;
 
 }
@@ -1318,7 +1319,7 @@ void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
     m_oTrajFile << oTrajectory.pose.pose.position.x << " "
                 << oTrajectory.pose.pose.position.y << " "
                 << oTrajectory.pose.pose.position.z << " " 
-                << oTrajectory.header.stamp << " "
+                << ros::Time::now() << " "
                 << std::endl;
 
     m_oTrajFile.close();
