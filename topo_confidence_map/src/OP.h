@@ -129,8 +129,6 @@ public:
     void PrintPlanNodes(const int & iQueryIdx,
 	                    const std::vector<ConfidenceValue> & vConfidenceMap);
 
-	std::vector<Node> m_vAllNodes;
-
 private:
 
 	//the grid index of which current robot is 
@@ -145,6 +143,7 @@ private:
     std::vector<int> m_vPastNodeIdxs;//note that index is in m_vAllNodes
 
     //all generated nodes
+	std::vector<Node> m_vAllNodes;
 
 	//branch and bound based method's object
 	BranchBound BBSolver;
