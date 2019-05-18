@@ -1798,10 +1798,10 @@
       <pose frame=''>0.114985 -0.088625 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
-      <sim_time>2903 622000000</sim_time>
-      <real_time>265 803707936</real_time>
-      <wall_time>1556978781 736142966</wall_time>
-      <iterations>263668</iterations>
+      <sim_time>2988 854000000</sim_time>
+      <real_time>85 504604886</real_time>
+      <wall_time>1558161473 426746463</wall_time>
+      <iterations>85232</iterations>
       <model name='House 1'>
         <pose frame=''>17.4632 19.8034 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -1843,10 +1843,10 @@
         </link>
       </model>
       <model name='Mailbox'>
-        <pose frame=''>-12.0216 2.96107 0.5 5e-06 -2e-06 -1.7e-05</pose>
+        <pose frame=''>-12.0216 2.96107 0.499991 5e-06 -2e-06 -1.7e-05</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose frame=''>-12.0216 2.96107 0.5 5e-06 -2e-06 -1.7e-05</pose>
+          <pose frame=''>-12.0216 2.96107 0.499991 5e-06 -2e-06 -1.7e-05</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 -9.8 0 -0 0</acceleration>
           <wrench>0 0 -9.8 0 -0 0</wrench>
@@ -2526,13 +2526,43 @@
           </link>
         </model>
       </model>
+      <model name='xiangzi3'>
+        <pose frame=''>18.7774 3.8267 0 0 -0 0</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose frame=''>18.7774 3.8267 0 0 -0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='xiangzi3_0'>
+        <pose frame=''>19.2061 0.002551 0 0 -0 0</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose frame=''>19.2061 0.002551 0 0 -0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='xiangzi3_1'>
+        <pose frame=''>18.5845 -5.02076 0 0 -0 0</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose frame=''>18.5845 -5.02076 0 0 -0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
       <light name='sun'>
         <pose frame=''>0 0 10 0 -0 0</pose>
       </light>
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose frame=''>-18.4672 -7.96225 4.62693 0 0.307522 -1.99961</pose>
+        <pose frame=''>-8.21397 -7.86321 7.17275 0 -0.192478 0.171575</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -4378,6 +4408,117 @@
       <static>1</static>
       <allow_auto_disable>1</allow_auto_disable>
       <pose frame=''>-19.8903 -11.3552 0 0 -0 0</pose>
+    </model>
+    <model name='xiangzi3'>
+      <static>1</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <scale>0.03 0.03 0.03</scale>
+              <uri>model://xiangzi3/meshes/xiangzi3.obj</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <scale>0.03 0.03 0.03</scale>
+              <uri>model://xiangzi3/meshes/xiangzi3.obj</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+      </link>
+      <pose frame=''>18.7774 3.8267 0 0 -0 0</pose>
+    </model>
+    <model name='xiangzi3_0'>
+      <static>1</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <scale>0.03 0.03 0.03</scale>
+              <uri>model://xiangzi3/meshes/xiangzi3.obj</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <scale>0.03 0.03 0.03</scale>
+              <uri>model://xiangzi3/meshes/xiangzi3.obj</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+      </link>
+      <pose frame=''>19.2061 0.002551 0 0 -0 0</pose>
+    </model>
+    <model name='xiangzi3_1'>
+      <static>1</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <scale>0.03 0.03 0.03</scale>
+              <uri>model://xiangzi3/meshes/xiangzi3.obj</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <scale>0.03 0.03 0.03</scale>
+              <uri>model://xiangzi3/meshes/xiangzi3.obj</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+      </link>
+      <pose frame=''>18.5845 -5.02076 0 0 -0 0</pose>
     </model>
   </world>
 </sdf>
