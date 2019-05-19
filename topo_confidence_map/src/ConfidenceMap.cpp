@@ -794,6 +794,7 @@ void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	//**********Measurement item************
 	//compute the visibility based on the history of view points
 	std::vector<bool> vVisableRes = oGHPRer.ComputeVisibility(*pNearAllCloud, oPastViewPoint);
+
 	
 	//**********Incremental item************
 	//fv(p) = fv(n)  
@@ -892,6 +893,7 @@ Return: a vector saves distance value of each neighboring grid
 Others: none
 *************************************************/
 void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
+	                                                   float & fCurrentAcc,
 	                                 const PCLCloudXYZPtr & pObstacleCloud,
                                    const std::vector<int> & vObstNodeTimes,
                     const std::vector<std::vector<int> > & vObstlPntMapIdx,
@@ -922,6 +924,7 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
     //construct a candidates
     //choose a grid (randomly), which is equal to down sampling
     std::vector<int> vSelectedGrids = GetRandom(vNonGrndGrids.size(), iSmplNum);
+    std::vector<float> vAccVecs;
 
     //compute the dimension feature of each selected obstacle grid
     for(int is = 0; is != vSelectedGrids.size(); ++is){
@@ -930,6 +933,7 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
         
         //point clouds to be measured
 	    PCLCloudXYZPtr pMeasuredCloud(new PCLCloudXYZ);
+	    PCLCloudXYZPtr pAccCloud(new PCLCloudXYZ);
 
 	    //compute the local region based on the selected grid
         std::vector<int> vMeasuredGridIdx; 
@@ -946,8 +950,12 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 		    if(vConfidenceMap[iOneGridIdx].label == 1 || vConfidenceMap[iOneGridIdx].label == 3){
 
 			    for (int j = 0; j != vObstlPntMapIdx[iOneGridIdx].size(); ++j){
+
+			    	   
         	        if(vObstNodeTimes[vObstlPntMapIdx[iOneGridIdx][j]] == iNodeTime)//if it is recorded at current node time
         	    	    pMeasuredCloud->points.push_back(pObstacleCloud->points[vObstlPntMapIdx[iOneGridIdx][j]]);
+                    if(iOneGridIdx == iOneSlctIdx)
+        	    	    pAccCloud->points.push_back(pObstacleCloud->points[vObstlPntMapIdx[iOneGridIdx][j]]);
 
         	    }//end for j
 	
@@ -973,6 +981,28 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	    fHausRes = fHausRes - 2.0f;
 	    if(fHausRes < 0.0)
 	       fHausRes = -1.5f*fHausRes;
+
+        //accacury
+	    if(pAccCloud->size()>4){
+	    	
+	        pcl::PCA<pcl::PointXYZ> oPCA;
+	        oPCA.setInputCloud(pAccCloud);
+
+	        Eigen::Vector3f eigenvalues = oPCA.getEigenValues();
+	        float fAcc = sqrt(eigenvalues[2]);
+	        if(fAcc >= 0.0 && fAcc< 100.0){//to defend -NAN
+	        std::cout<< "fAcc: " << fAcc << std::endl;
+	        vAccVecs.push_back(fAcc);
+	        }
+
+        }
+
+        float fTotalAcc = 0.0;
+        for(int i = 0; i != vAccVecs.size(); ++i)
+            fTotalAcc = fTotalAcc + vAccVecs[i];
+        
+        if(vAccVecs.size())
+           fCurrentAcc = fTotalAcc/float(vAccVecs.size());
 
 	    //record each measured point clouds for test only
         //OutputQualityClouds(*pMeasuredCloud, fHausRes);

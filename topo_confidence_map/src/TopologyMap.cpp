@@ -35,6 +35,7 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_iOdomSampingNum(25),
 	                     m_bGridMapReadyFlag(false),
 	                     m_bCoverFileFlag(false),
+	                     m_bAccFileFlag(false),
 	                     m_bOutTrajFileFlag(false),
 	                     m_bAnchorGoalFlag(false){
 
@@ -1152,9 +1153,10 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 	                          pNearGrndClouds,
     	                     pNearBndryClouds);
 
-
+    float fCurrentAcc = 0;
     //compute quality term
     m_oCnfdnSolver.QualityTerm(m_vConfidenceMap,
+    	                            fCurrentAcc,
     	                       m_pObstacleCloud,
                                m_vObstNodeTimes,
                               m_vObstlPntMapIdx, 
@@ -1170,6 +1172,8 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
     PublishPlanNodeClouds();
     PublishPastNodeClouds();
+    if(fCurrentAcc)
+        RecordAcc(fCurrentAcc);
 
 	//output result on screen
 	PublishGridMap();
@@ -1476,7 +1480,32 @@ void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
 }
 
 
+void TopologyMap::RecordAcc(const float & fCurrentAcc){
+//
 
+	if(!m_bAccFileFlag){
+
+	    //set the current time stamp as a file name
+        //full name 
+		m_sAccFileName << m_sFileHead << "Acc_" << ros::Time::now() << ".txt"; 
+
+		m_bAccFileFlag = true;
+        //print coverage rate evaluation message
+		std::cout << "Attention a accacury evaluation file is created in " << m_sAccFileName.str() << std::endl;
+	}
+
+	//output
+	m_oAccFile.open(m_sAccFileName.str(), std::ios::out | std::ios::app);
+
+	//output in a txt file
+    //the storage type of output file is x y z time frames right/left_sensor
+    m_oAccFile << fCurrentAcc << " "
+               << ros::Time::now() << " "
+               << std::endl;
+
+    m_oAccFile.close();
+
+}
 
 
 } /* namespace */

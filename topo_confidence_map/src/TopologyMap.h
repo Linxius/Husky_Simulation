@@ -120,6 +120,8 @@ class TopologyMap{
 
   void PublishGoalOdom(pcl::PointXYZ & oGoalPoint);
 
+  void RecordAcc(const float & fCurrentAcc);
+
   //output data in file
   void OutputCoverRateFile(const int & iTravelableNum);
   void OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory);
@@ -137,6 +139,10 @@ class TopologyMap{
   std::stringstream m_sOutTrajFileName;///<full name of output txt that records the trajectory point 
   bool m_bOutTrajFileFlag;//whether the outfile got a full name or not 
   std::ofstream m_oTrajFile;
+
+  std::stringstream m_sAccFileName;
+  bool m_bAccFileFlag;
+  std::ofstream m_oAccFile;
 
   //input topics:
   ros::Subscriber m_oOdomSuber;//the subscirber is to hear (record) odometry from gazebo
@@ -255,4 +261,3 @@ class TopologyMap{
 
 
 #endif
-

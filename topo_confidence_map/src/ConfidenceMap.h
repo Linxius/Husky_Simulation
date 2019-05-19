@@ -10,6 +10,9 @@
 
 #include <stdlib.h>
 #include <time.h> 
+#include <pcl/features/normal_3d.h>
+#include <pcl/common/centroid.h>
+#include <pcl/common/pca.h>
 
 
 ///************************************************************************///
@@ -248,6 +251,7 @@ public:
 
 	//4. quality term of confidence map
 	void QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
+		                                       float & fCurrentAcc,
 		                     const PCLCloudXYZPtr & pObstacleCloud,
                            const std::vector<int> & vObstNodeTimes,
             const std::vector<std::vector<int> > & vObstlPntMapIdx,
