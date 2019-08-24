@@ -29,7 +29,9 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   husky package wiki.ros.org/Robots/Husky
   activate the commented lines in env_hooks to append to GAZEBO_RESOURCE_PATH-->
   <arg name="laser_enabled" default="$(optenv HUSKY_LASER_ENABLED false)"/>
+  <!--
   <arg name="ur5_enabled" default="$(optenv HUSKY_UR5_ENABLED false)"/>
+  -->
   <arg name="kinect_enabled" default="$(optenv HUSKY_KINECT_ENABLED false)"/>
   <arg name="gui_enabled" default="true"/>
 
@@ -45,7 +47,9 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
   <include file="$(find husky_gazebo)/launch/spawn_husky.launch">
     <arg name="laser_enabled" value="$(arg laser_enabled)"/>
+    <!--
     <arg name="ur5_enabled" value="$(arg ur5_enabled)"/>
+    -->
     <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
   </include>
 

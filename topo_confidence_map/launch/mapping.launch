@@ -32,7 +32,7 @@
   <!--parameter of three term travel term, bound term and visible term, respectively-->
   <!--traversweight + exploreWeight = 1, and disWeight + boundWeight = 1 /-->
   <!-- 0.9 - 1/0, 1/0 - 0.6 -->
-  <arg name="traversweight" default="1" /><!--m_fExploreWeight = 1.0 - f_fTraversWeight;/-->
+  <arg name="traversweight" default="0.9" /><!--m_fExploreWeight = 1.0 - f_fTraversWeight;/-->
   <arg name="traversdisweight" default="0.6" /><!-- m_fBoundWeight = 1.0 - f_fDisWeight;/-->
 
   <!-- Load the octomap -->
