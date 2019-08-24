@@ -5,6 +5,7 @@ namespace topology_map {
 
 
 //*********************************Initialization function*********************************
+
 /*************************************************
 Function: TopologyMap
 Description: constrcution function for TopologyMap class
@@ -12,13 +13,31 @@ Calls: all member functions
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: global node,
-       privare node
-	   flag of generating output file
-	   original frame value
-	   Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
+Input: node - a ros node class
+	   nodeHandle - a private ros node class
+Return: Parameter initialization
+Others: m_oCnfdnSolver - (f_fSigma - the computed radius of robot
+	                      f_fGHPRParam - the parameter of GHPR algorithm
+	                      f_fVisTermThr - the threshold of visbility term - useless
+	                      f_fMinNodeThr - minimum value to generate node
+                          m_fTraversWeight - traverel weight
+                          m_fExploreWeight - visibility weight
+                          m_fDisWeight - distance term weight
+                          m_fBoundWeight - bound term weight)
+	    m_pBoundCloud - a point clouds storing the received boundary points
+	    m_pObstacleCloud - a point clouds storing the received obstacle points
+	    m_iTrajFrameNum - record received odometry frame
+	    m_iGroundFrames - record received ground point cloud frame
+	    m_iBoundFrames - record received boundary point cloud frame
+	    m_iObstacleFrames - record received obstacle point cloud frame 
+	    m_iComputedFrame - record computed times of processing point cloud frame
+	    m_iNodeTimes - count node generation times
+	    m_iAncherCount - count visited anchor in a trip 
+	    m_iOdomSampingNum - smapling number of odometry points
+	    m_bGridMapReadyFlag - a flag indicating the grid map has been initialized (true) or not (false)
+	    m_bCoverFileFlag - a flag indicating whether an coverage file is generated (true) or not (false)
+	    m_bOutTrajFileFlag - a flag indicating whether an out trajectroy file is generated
+	    m_bAnchorGoalFlag - a flag indicating the robot is moving Moving on a local optimization path
 *************************************************/
 TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     ros::NodeHandle & nodeHandle):
@@ -26,6 +45,7 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_pBoundCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_pObstacleCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_iTrajFrameNum(0),
+	                     m_iRecordPCNum(0),
 	                     m_iGroundFrames(0),
 	                     m_iBoundFrames(0),
 	                     m_iObstacleFrames(0),
@@ -35,15 +55,16 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_iOdomSampingNum(25),
 	                     m_bGridMapReadyFlag(false),
 	                     m_bCoverFileFlag(false),
-	                     m_bAccFileFlag(false),
 	                     m_bOutTrajFileFlag(false),
-	                     m_bAnchorGoalFlag(false){
+	                     m_bOutPCFileFlag(false),
+	                     m_bAnchorGoalFlag(false),
+	                     m_bOutNodeFileFlag(false){
 
 
 	srand((unsigned)time(NULL));
 
 	//read parameters
-	ReadTopicParams(nodeHandle);
+	ReadLaunchParams(nodeHandle);
 
 	//subscribe topic 
 	//m_oOctoMapClient = nodeHandle.serviceClient<octomap_msgs::GetOctomap>(m_oOctomapServiceTopic);
@@ -69,43 +90,40 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 
 }
 
+
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
+Function: ~TopologyMap
+Description: deconstrcution function for TopologyMap class
 Calls: all member functions
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: global node,
-		   privare node
-		   flag of generating output file
-		   original frame value
-	Output: none
-	Return: none
-	Others: the HandlePointClouds is the kernel function
+Input: none
+Output: none
+Return: none
+Others: none
 *************************************************/
 
 TopologyMap::~TopologyMap() {
 
 }
 
-	/*************************************************
-	Function: TopologyMap
-	Description: constrcution function for TopologyMap class
-	Calls: all member functions
-	Called By: main function of project
-	Table Accessed: none
-	Table Updated: none
-	Input: global node,
-	privare node
-	flag of generating output file
-	original frame value
-	Output: none
-	Return: none
-	Others: the HandlePointClouds is the kernel function
-	*************************************************/
 
-bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
+
+/*************************************************
+Function: ReadLaunchParams
+Description: read the parameter value from ros launch file (mapping.launch)
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: nodeHandle - a private ros node class
+Output: the individual parameter value for system
+Return: none
+Others: none
+*************************************************/
+
+bool TopologyMap::ReadLaunchParams(ros::NodeHandle & nodeHandle) {
 
 	//output file name
 	nodeHandle.param("file_outputpath", m_sFileHead, std::string("./"));
@@ -244,21 +262,20 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 
 }
 
+
+
 /*************************************************
-Function: TopologyMap
-	Description: constrcution function for TopologyMap class
-	Calls: all member functions
-	Called By: main function of project
-	Table Accessed: none
-	Table Updated: none
-	Input: global node,
-		   privare node
-		   flag of generating output file
-		   original frame value
-	Output: none
-	Return: none
-	Others: the HandlePointClouds is the kernel function
-	*************************************************/
+Function: InitializeGridMap
+Description: initialize the confidence map by using a grid_map lib
+Calls: all member functions
+Called By: TopologyMap(), which is the construction function 
+Table Accessed: none
+Table Updated: none
+Input: pcl::PointXYZ & oRobotPos - the current robot position with a pcl pointxyz type
+Output: a grid map
+Return: none
+Others: none
+*************************************************/
 
 void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 
@@ -324,28 +341,23 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 }
 
 
-
-
-//*********************************Traversing / retrieving function*********************************
-
-
-
 /*************************************************
-Function: DevidePointClouds
-Description: constrcution function for TopologyMap class
+Function: ExtractLabeledPCs
+Description: Extract corresponding point clouds with different labels  
 Calls: all member functions
-Called By: main function of project
+Called By: ComputeConfidence
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare nodem_dMapMaxRange
-flag of generating output file
-original frame value
-Output: none
+Input: vNearByIdxs - current nearby grid indexs of robot
+       iNodeTime - Cumulative number of node calculations, which is private var in class
+Output: vNearGrndClouds - nearby ground point clouds
+	    NearGroundGridIdxs - nearby ground grid index
+        vNearBndryClouds - nearby boundary point clouds
+        vNearObstClouds -   nearby obstacle point clouds
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
-void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+void TopologyMap::ExtractLabeledPCs(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
 	                                          std::vector<int> & vNearGroundGridIdxs,
                                    pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
                                     pcl::PointCloud<pcl::PointXYZ> & vNearObstClouds,	                                          
@@ -398,8 +410,8 @@ void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndCl
     }//end for i
 
 }
-//reload without label input
-void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+//reload with extracting all nearby point clouds
+void TopologyMap::ExtractLabeledPCs(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                                   pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
                                     pcl::PointCloud<pcl::PointXYZ> & vNearAllClouds,
 	                                         std::vector<int> & vNearGroundGridIdxs,
@@ -461,8 +473,8 @@ void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndCl
     	vNearAllClouds.push_back(vNearObstClouds.points[i]);
 
 }
-//reload without generating vNearAllClouds and label
-void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+//reload with generating ground and boundary points only
+void TopologyMap::ExtractLabeledPCs(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                                   pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
 	                                         std::vector<int> & vNearGroundGridIdxs,
                                           const std::vector<MapIndex> & vNearByIdxs){
@@ -499,18 +511,20 @@ void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndCl
 
 }
 
-//*********************************Processing function*********************************
 /*************************************************
-Function: HandleTrajectory
-Description: a callback function in below:
-m_oOdomSuber = node.subscribe(m_sOdomTopic, 5, &GroundExtraction::HandleTrajectory, this);
+Function: SamplingPointClouds
+Description: down samples point clouds number (seems like pseudo random)
 Calls: none
-Called By: TransformLaserInOdom, which is the construction function
+Called By: HandleBoundClouds
+           HandleObstacleClouds
 Table Accessed: none
 Table Updated: none
-Input: rawpoint, a 3d point with pcl point type
-Output: a point clouds are almost the same with raw point clouds but timestamp values
-Return: none
+Input: pCloud - the point cloud to be sampled
+	   vPointMapIdx - point index in the grid map
+	   iSmplNum - sampling number
+Output: pCloud - the point cloud to be sampled
+	    vPointMapIdx - point index in the grid map
+Return: oRealGoalPoint - a motion goal position of robot 
 Others: none
 *************************************************/
 void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
@@ -553,13 +567,11 @@ void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pClo
 
 
 }
-//reload sampling with point number
+//reload with adding a label vector
 void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
 	                                 std::vector<std::vector<int> > & vPointMapIdx,
 	                                               std::vector<int> & vCloudLabels,
 	                                                                  int iSmplNum){
-
-
 
     //point clouds sampling based on the idx vector
 	for(int i = 0; i != vPointMapIdx.size(); ++i){
@@ -606,13 +618,17 @@ void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pClo
 /*************************************************
 Function: HandleTrajectory
 Description: a callback function in below:
-m_oOdomSuber = node.subscribe(m_sOdomTopic, 5, &GroundExtraction::HandleTrajectory, this);
-Calls: none
-Called By: TransformLaserInOdom, which is the construction function
+m_oOdomSuber = nodeHandle.subscribe(m_sOdomTopic, 1, &TopologyMap::HandleTrajectory, this);
+this is the trigger functions and backbone functions of class TopologyMap
+Calls: InitializeGridMap()
+       OutputTrajectoryFile()
+       ComputeConfidence()
+       PublishGoalOdom()
+Called By: TopologyMap()
 Table Accessed: none
 Table Updated: none
-Input: rawpoint, a 3d point with pcl point type
-Output: a point clouds are almost the same with raw point clouds but timestamp values
+Input: oTrajectory - a ros type odometry position
+Output: 
 Return: none
 Others: none
 *************************************************/
@@ -730,6 +746,23 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		    //output node
 		    m_oOPSolver.OutputGoalPos(m_oNodeGoal);
 
+
+		    if(!m_bOutNodeFileFlag){
+		    	m_sOutNodeFileName << m_sFileHead << "Node_" << ros::Time::now() << ".txt";
+		    	m_bOutNodeFileFlag = true;
+		    }
+
+		    //output txt file recording node position
+		    m_oNodeFile.open(m_sOutNodeFileName.str(), std::ios::out | std::ios::app);
+
+		    //record data
+            m_oNodeFile << m_oNodeGoal.x << " "
+                        << m_oNodeGoal.y << " "
+                        << m_oNodeGoal.z << " "  
+                        << std::endl;
+
+            m_oNodeFile.close();
+
 		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
 		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
 
@@ -835,15 +868,16 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 
 
 /*************************************************
-Function: HandleTrajectory
+Function: HandleGroundClouds
 Description: a callback function in below:
-m_oOdomSuber = node.subscribe(m_sOdomTopic, 5, &GroundExtraction::HandleTrajectory, this);
+m_oGroundSuber = nodeHandle.subscribe(m_sGroundTopic, 1, &TopologyMap::HandleGroundClouds, this);
+this is to store ground point based on the grid (present center point of grid occupied by the ground points)
 Calls: none
-Called By: TransformLaserInOdom, which is the construction function
+Called By: TopologyMap()
 Table Accessed: none
 Table Updated: none
-Input: rawpoint, a 3d point with pcl point type
-Output: a point clouds are almost the same with raw point clouds but timestamp values
+Input: vGroundRosData - a point clouds send from another ros topic
+Output: none
 Return: none
 Others: none
 *************************************************/
@@ -893,20 +927,24 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 			}//end if (!(i%m_iPCSmplNum))
 		}//end for (int i = 0; i != vOneGCloud.size();
 
+		//record one frame of point clouds in txt file
+		//OutputScannedPCFile(vOneGCloud);
+
 	}//end if m_bGridMapReadyFlag
 
 }
 
 /*************************************************
-Function: HandleTrajectory
+Function: HandleBoundClouds
 Description: a callback function in below:
-m_oOdomSuber = node.subscribe(m_sOdomTopic, 5, &GroundExtraction::HandleTrajectory, this);
-Calls: none
-Called By: TransformLaserInOdom, which is the construction function
+m_oBoundSuber = nodeHandle.subscribe(m_sBoundTopic, 1, &TopologyMap::HandleBoundClouds, this);
+this is to store boundary points
+Calls: SamplingPointClouds()
+Called By: TopologyMap()
 Table Accessed: none
 Table Updated: none
-Input: rawpoint, a 3d point with pcl point type
-Output: a point clouds are almost the same with raw point clouds but timestamp values
+Input: vBoundRosData - a 3d point clouds send from another topic
+Output: none
 Return: none
 Others: none
 *************************************************/
@@ -953,6 +991,8 @@ void TopologyMap::HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosDa
 
 		}//end for
 
+		//record one frame of point clouds in txt file
+		OutputScannedPCFile(vOneBCloud);
 
 		if(m_pBoundCloud->points.size()>3000000){
 			SamplingPointClouds(m_pBoundCloud, m_vBoundPntMapIdx);
@@ -963,15 +1003,16 @@ void TopologyMap::HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosDa
 }
 
 /*************************************************
-Function: HandleTrajectory
+Function: HandleObstacleClouds
 Description: a callback function in below:
-m_oOdomSuber = node.subscribe(m_sOdomTopic, 5, &GroundExtraction::HandleTrajectory, this);
-Calls: none
-Called By: TransformLaserInOdom, which is the construction function
+m_oObstacleSuber = nodeHandle.subscribe(m_sObstacleTopic, 1, &TopologyMap::HandleObstacleClouds, this);
+this is to store obstacle point clouds
+Calls: SamplingPointClouds()
+Called By: TopologyMap()
 Table Accessed: none
 Table Updated: none
-Input: rawpoint, a 3d point with pcl point type
-Output: a point clouds are almost the same with raw point clouds but timestamp values
+Input: vObstacleRosData - an obstacle point clouds send from another topic  
+Output: none
 Return: none
 Others: none
 *************************************************/
@@ -1016,34 +1057,33 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 			}//end if i%m_iPCSmplNum
 		}//end for i
 
+        //record one frame of point clouds in txt file
+		OutputScannedPCFile(vOneOCloud);
 
 		if(m_pObstacleCloud->points.size()>8000000){
 			SamplingPointClouds(m_pObstacleCloud, m_vObstlPntMapIdx, m_vObstNodeTimes);
 		}//end if if(m_pObstacleCloud->points.size()>X)
-
 
 	}//end if (m_bGridMapReadyFlag) 
 
 }
 
 
-
-//*************Feature calculation function (Subject function)*************
-
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
+Function: ComputeConfidence
+Description: this function is to compute the confidence feature of scanning scene
+Calls: DevidePointClouds()
+	   PublishPointCloud()
+	   PublishGridMap()
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
+Input: oCurrRobotPos - current robot position
+	   oPastRobotPos - past robot position
+Output: m_oCnfdnSolver - confidence map
+        m_oGMer - grid_map type base map data
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
 
 void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
@@ -1069,7 +1109,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 			                  m_iNodeTimes);
 
     //extract point clouds with different labels, respectively
-    DevidePointClouds(*pNearGrndClouds,
+    ExtractLabeledPCs(*pNearGrndClouds,
     	              *pNearBndryClouds,
     	              *pNearAllClouds,
 	                  vNearGrndGrdIdxs,
@@ -1111,8 +1151,9 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 	PublishPointCloud(*pNearAllClouds);//for test
 	PublishGridMap();
 
+
 }
-//reload without occlusion
+//reload without occlusion calculation
 void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearGrndClouds(new pcl::PointCloud<pcl::PointXYZ>);
@@ -1135,7 +1176,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 			                  m_iNodeTimes);
 
     //extract point clouds with different labels, respectively
-    DevidePointClouds(*pNearGrndClouds,
+    ExtractLabeledPCs(*pNearGrndClouds,
                      *pNearBndryClouds,
                       vNearGrndGrdIdxs,
                            vNearByIdxs);
@@ -1153,10 +1194,9 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 	                          pNearGrndClouds,
     	                     pNearBndryClouds);
 
-    float fCurrentAcc = 0;
+
     //compute quality term
     m_oCnfdnSolver.QualityTerm(m_vConfidenceMap,
-    	                            fCurrentAcc,
     	                       m_pObstacleCloud,
                                m_vObstNodeTimes,
                               m_vObstlPntMapIdx, 
@@ -1172,28 +1212,23 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
     PublishPlanNodeClouds();
     PublishPastNodeClouds();
-    if(fCurrentAcc)
-        RecordAcc(fCurrentAcc);
 
 	//output result on screen
 	PublishGridMap();
 
 }
-//*********************************Traversing / retrieving function*********************************
+
 /*************************************************
-Function: TopologyMap
+Function: PublishGridMap
 Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Calls: OutputCoverRateFile()
+Called By: ComputeConfidence()
 Table Accessed: none
 Table Updated: none
-Input: global node,
-       privare node
-       flag of generating output file
-       original frame value
-Output: none
+Input: none
+Output: a grid map updating in rviz
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
 
 void TopologyMap::PublishGridMap(){
@@ -1268,19 +1303,16 @@ void TopologyMap::PublishGridMap(){
 }
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: PublishPointCloud
+Description: publish point clouds (mainly used for display and test)
+Calls: none
+Called By: ComputeConfidence()
 Table Accessed: none
 Table Updated: none
-Input: global node,
-       privare node
-       flag of generating output file
-       original frame value
+Input: vCloud - a point clouds to be published
 Output: none
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
 
 void TopologyMap::PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud){
@@ -1296,6 +1328,19 @@ void TopologyMap::PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud){
   m_oCloudPublisher.publish(vCloudData);
 
 }
+
+/*************************************************
+Function: PublishPlanNodeClouds
+Description: publish unvisited nodes as a point clouds (mainly used for display and test)
+Calls: none
+Called By: ComputeConfidence()
+Table Accessed: none
+Table Updated: none
+Input: none
+Output: m_oOPSolver.m_vAllNodes.point - a private variable of class object m_oOPSolver
+Return: none
+Others: none
+*************************************************/
 
 void TopologyMap::PublishPlanNodeClouds(){
   //publish obstacle points
@@ -1328,6 +1373,19 @@ void TopologyMap::PublishPlanNodeClouds(){
 
 }
 
+/*************************************************
+Function: PublishPastNodeClouds
+Description: Publish visited nodes as a point clouds (mainly used for display and test)
+Calls: none
+Called By: ComputeConfidence()
+Table Accessed: none
+Table Updated: none
+Input: none
+Output: m_oOPSolver.m_vAllNodes.point - a private variable of class object m_oOPSolver
+Return: none
+Others: none
+*************************************************/
+
 void TopologyMap::PublishPastNodeClouds(){
   //publish obstacle points
 
@@ -1359,20 +1417,18 @@ void TopologyMap::PublishPastNodeClouds(){
     m_oPastNodePublisher.publish(vCloudData);
 
 }
+
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: PublishGoalOdom
+Description: publish motion goal position for another topic
+Calls: none
+Called By: ComputeConfidence()
 Table Accessed: none
 Table Updated: none
-Input: global node,
-       privare node
-       flag of generating output file
-       original frame value
-Output: none
+Input: oGoalPoint - a position of goal
+Output: oCurrGoalOdom - a goal position in ros type
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
 
 void TopologyMap::PublishGoalOdom(pcl::PointXYZ & oGoalPoint){
@@ -1392,19 +1448,16 @@ void TopologyMap::PublishGoalOdom(pcl::PointXYZ & oGoalPoint){
 
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: OutputCoverRateFile
+Description: output a real-time coverage value in a txt file 
+Calls: none
+Called By: PublishGridMap()
 Table Accessed: none
 Table Updated: none
-Input: global node,
-       privare node
-       flag of generating output file
-       original frame value
+Input: iTravelableNum - the counted number of ground grids 
 Output: none
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
 
 void TopologyMap::OutputCoverRateFile(const int & iTravelableNum){
@@ -1435,19 +1488,16 @@ void TopologyMap::OutputCoverRateFile(const int & iTravelableNum){
 }
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: OutputTrajectoryFile
+Description: output the odometry position in a txt file
+Calls: none
+Called By: HandleTrajectory
 Table Accessed: none
 Table Updated: none
-Input: global node,
-       privare node
-       flag of generating output file
-       original frame value
-Output: none
+Input: oTrajectory - odometry data in ros type
+Output: a trajectory txt file
 Return: none
-Others: the HandFindLocalMinimumlePointClouds is the kernel function
+Others: none
 *************************************************/
 
 void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
@@ -1480,32 +1530,60 @@ void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
 }
 
 
-void TopologyMap::RecordAcc(const float & fCurrentAcc){
-//
-
-	if(!m_bAccFileFlag){
+/*************************************************
+Function: OutputScannedPCFile
+Description: output scanned point clouds in a txt file
+Calls: none
+Called By: HandleTrajectory
+Table Accessed: none
+Table Updated: none
+Input: vCloud - one frame scanning point cloud data
+Output: a point cloud txt file
+Return: none
+Others: none
+*************************************************/
+void TopologyMap::OutputScannedPCFile(pcl::PointCloud<pcl::PointXYZ> & vCloud){
+  
+    //generate a output file if possible
+	if(!m_bOutPCFileFlag){
 
 	    //set the current time stamp as a file name
         //full name 
-		m_sAccFileName << m_sFileHead << "Acc_" << ros::Time::now() << ".txt"; 
+		m_sOutPCFileName << m_sFileHead << "PC_" << ros::Time::now() << ".txt"; 
 
-		m_bAccFileFlag = true;
-        //print coverage rate evaluation message
-		std::cout << "Attention a accacury evaluation file is created in " << m_sAccFileName.str() << std::endl;
+		m_bOutPCFileFlag = true;
+        //print output file generation message
+		std::cout << "[*] Attention, a point cloud recording file is created in " << m_sOutPCFileName.str() << std::endl;
 	}
 
-	//output
-	m_oAccFile.open(m_sAccFileName.str(), std::ios::out | std::ios::app);
+    //output
+	m_oPCFile.open(m_sOutPCFileName.str(), std::ios::out | std::ios::app);
 
 	//output in a txt file
-    //the storage type of output file is x y z time frames right/left_sensor
-    m_oAccFile << fCurrentAcc << " "
-               << ros::Time::now() << " "
-               << std::endl;
+	//the storage type of output file is x y z time frames 
+    //record the point clouds
+    for(int i = 0; i != vCloud.size(); ++i ){
 
-    m_oAccFile.close();
+        //output in a txt file
+        //the storage type of output file is x y z time frames right/left_sensor
+        m_oPCFile << vCloud.points[i].x << " "
+                  << vCloud.points[i].y << " "
+                  << vCloud.points[i].z << " " 
+                  << m_iRecordPCNum << " " 
+                  << std::endl;
+    }//end for         
+
+    m_oPCFile.close();
+
+    //count new point cloud input (plus frame) 
+    m_iRecordPCNum++;
 
 }
+
+
+
+  
+
 
 
 } /* namespace */

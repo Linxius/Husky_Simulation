@@ -5,14 +5,22 @@ namespace topology_map {
 /*************************************************
 Function: Confidence
 Description: constrcution function for Confidence class
-Calls: SetSigmaValue
+Calls: SetSigmaValue()
+       SetVisTermThr()
+       SetNodeGenParas()
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: f_fSigma - the parameter sigma of GaussianKernel
-Output: none
+Input: f_fSigma - the computed radius of robot
+	   f_fGHPRParam - the parameter of GHPR algorithm
+	   f_fVisTermThr - the threshold of visbility term - useless
+	   f_fMinNodeThr - minimum value to generate node
+Output: parameter initialization
 Return: none
-Others: none
+Others: m_fTraversWeight - traverel weight
+        m_fExploreWeight - visibility weight
+        m_fDisWeight - distance term weight
+        m_fBoundWeight - bound term weight
 *************************************************/
 Confidence::Confidence(float f_fSigma,
 	                   float f_fGHPRParam,
@@ -20,7 +28,6 @@ Confidence::Confidence(float f_fSigma,
 	                  float f_fMinNodeThr):
 	                 m_fTraversWeight(0.9),
                      m_fExploreWeight(0.1),
-	                      m_fDensityR(0.3),
                          m_fDisWeight(0.6),
                        m_fBoundWeight(0.4){
 
@@ -59,7 +66,7 @@ Confidence::~Confidence(){
 Function: SetSigmaValue
 Description: set value to the private data member m_fSigma
 Calls: none
-Called By: Confidence
+Called By: Confidence()
 Table Accessed: none
 Table Updated: none
 Input: f_fSigma - a given sigma value depends on the scanning region
@@ -75,13 +82,13 @@ void Confidence::SetSigmaValue(const float & f_fSigma) {
 
 
 /*************************************************
-Function: SetSigmaValue
-Description: set value to the private data member m_fSigma
+Function: SetVisTermThr
+Description: set value to the private data member m_fVisTermThr
 Calls: none
-Called By: Confidence
+Called By: Confidence()
 Table Accessed: none
 Table Updated: none
-Input: f_fSigma - a given sigma value depends on the scanning region
+Input: f_fVisTermThr - a visibility term threshold
 Output: none
 Return: none
 Others: none
@@ -93,18 +100,23 @@ void Confidence::SetVisTermThr(const float & f_fVisTermThr) {
 }
 
 /*************************************************
-Function: SetVisParas
+Function: SetTermWeight
 Description: set value to the parameters related to visibility term
 Calls: none
-Called By: Confidence
+Called By: main function or external call
 Table Accessed: none
 Table Updated: none
-Input: f_fGHPRParam - a parameter of GHPR algorithm
-      f_fVisTermThr - a threshold of visibility value
-Output: m_fGHPRParam
-        m_fVisTermThr
+Input: f_fTraversWeight - traverel term weight
+	   f_fExploreWeight - explore term weighr
+	   f_fDisWeight - distance term weight
+	   f_fBoundWeight - boundary term weight
+Output: m_fTraversWeight
+	    m_fExploreWeight
+        m_fDisWeight
+	    m_fBoundWeight
 Return: none
-Others: none
+Others: Theoretically,  f_fTraversWeight + f_fExploreWeight = 1, f_fDisWeight + f_fBoundWeight = 1
+        However, in fact, each weight can be assigned an appropriate value like f_fTraversWeight + f_fExploreWeight > 1
 *************************************************/
 void Confidence::SetTermWeight(const float & f_fTraversWeight,
 	                           const float & f_fExploreWeight,
@@ -118,7 +130,11 @@ void Confidence::SetTermWeight(const float & f_fTraversWeight,
 	m_fBoundWeight = f_fBoundWeight;
 
 }
-//reload with normalization
+//reload with normalization input
+//in this reload function
+//the weights must follow :
+//f_fTraversWeight + f_fExploreWeight = 1
+//f_fDisWeight + f_fBoundWeight = 1
 void Confidence::SetTermWeight(const float & f_fTraversWeight,
 	                           const float & f_fDisWeight){
 
@@ -132,16 +148,14 @@ void Confidence::SetTermWeight(const float & f_fTraversWeight,
 
 
 /*************************************************
-Function: SetVisParas
-Description: set value to the parameters related to visibility term
+Function: SetNodeGenParas
+Description: set value to the parameters of node generation threshold
 Calls: none
 Called By: Confidence
 Table Accessed: none
 Table Updated: none
-Input: f_fGHPRParam - a parameter of GHPR algorithm
-      f_fVisTermThr - a threshold of visibility value
-Output: m_fGHPRParam
-        m_fVisTermThr
+Input: f_fMinNodeThr - a threshold of node generation based on total confidence value
+Output: m_fMinNodeThr
 Return: none
 Others: none
 *************************************************/
@@ -151,18 +165,17 @@ void Confidence::SetNodeGenParas(const float & f_fMinNodeThr){
 
 }
 
+
 /*************************************************
-Function: SetVisParas
-Description: set value to the parameters related to visibility term
+Function: OutNodeGenParas
+Description: output the node generation threshold
 Calls: none
-Called By: Confidence
+Called By: main function or external call
 Table Accessed: none
 Table Updated: none
-Input: f_fGHPRParam - a parameter of GHPR algorithm
-      f_fVisTermThr - a threshold of visibility value
-Output: m_fGHPRParam
-        m_fVisTermThr
-Return: none
+Input: none
+Output: fMinNodeThr
+Return: fMinNodeThr
 Others: none
 *************************************************/
 float Confidence::OutNodeGenParas(){
@@ -171,6 +184,8 @@ float Confidence::OutNodeGenParas(){
 	return fMinNodeThr;
 
 }
+
+
 /*************************************************
 Function: VectorInnerProduct
 Description: This is an inner product operation of two vectors
@@ -379,6 +394,7 @@ inline float Confidence::Compute2Norm(const pcl::PointXYZ & oQueryPo, const pcl:
 
 }
 
+
 /*************************************************
 Function: ComputeSquareNorm
 Description: compute the square of norm
@@ -399,6 +415,7 @@ inline float Confidence::ComputeSquareNorm(const pcl::PointXYZ & oQueryPo, const
 	         + pow(oQueryPo.z - oTargerPo.z, 2.0f);
 
 }
+
 
 /*************************************************
 Function: ComputeCenter
@@ -622,18 +639,17 @@ float Confidence::ComputeEuclideanDis(pcl::PointXYZ & oQueryPoint, pcl::PointXYZ
 /*************************************************
 Function: DistanceTerm
 Description: the function is to compute the distance feature to the confidence value
-Calls: ComputeCenter
-       GaussianKernel
+Calls: GaussianKernel()
+       ComputeTotalCoffidence()
 Called By: main function of project 
 Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
 	   oRobotPoint - the location of the robot  
-	   vNearbyGridIdxs - the neighboring grids based on the input robot location
-	   vTravelCloud - the travelable point clouds (the ground point clouds)
-	   vGridTravelPsIdx - the index of point within each grid to total travelable point clouds  
-Output: the distance term value of each neighboring grid
-Return: a vector saves distance value of each neighboring grid
+	   vNearGroundIdxs - the neighboring grids based on the input robot location
+	   vGroundCloud - the NEARBY travelable point clouds (the NEARBY ground point clouds) 
+Output: update the total confidence (actually the travelTerm) value of the given nearby grid
+Return: none
 Others: none
 *************************************************/
 void Confidence::DistanceTerm(std::vector<ConfidenceValue> & vConfidenceMap,
@@ -671,21 +687,19 @@ void Confidence::DistanceTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 
 
 /*************************************************
-Function: DistanceTerm
-Description: the function is to compute the distance feature to the confidence value
-Calls: ComputeCenter
-       GaussianKernel
+Function: BoundTerm
+Description: the function is to compute the boundary feature for the confidence value
+Calls: ComputeTotalCoffidence()
 Called By: main function of project 
 Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
-	   oRobotPoint - the location of the robot  
-	   vNearbyGridIdxs - the neighboring grids based on the input robot location
-	   vTravelCloud - the travelable point clouds (the ground point clouds)
-	   vGridTravelPsIdx - the index of point within each grid to total travelable point clouds  
-Output: the distance term value of each neighboring grid
-Return: a vector saves distance value of each neighboring grid
-Others: none
+	   vNearGroundIdxs - the nearby ground grid idx 
+	   pGroundCloud - the NEARBY travelable point clouds (the NEARBY ground point clouds)
+	   pBoundCloud - the NEARBY boundary point clouds
+Output: update the total confidence value (actually the boundTerm) of the given nearby grid
+Return: none
+Others: the calculation of bound term is nothing to do with the robot position
 *************************************************/
 void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
                                const std::vector<int> & vNearGroundIdxs,
@@ -737,19 +751,19 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 
 /*************************************************
 Function: OcclusionTerm
-Description: the function is to compute the distance feature to the confidence value
-Calls: ComputeCenter
-GaussianKernel
-Called By: main function of project
+Description: the function is to compute the visibility feature to the confidence value
+Calls: GHPR class
+       ComputeTotalCoffidence()
+Called By: main function of project or other classes
 Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
-oRobotPoint - the location of the robot
-vNearbyGridIdxs - the neighboring grids based on the input robot location
-vTravelCloud - the travelable point clouds (the ground point clouds)
-vGridTravelPsIdx - the index of point within each grid to total travelable point clouds
-Output: the distance term value of each neighboring grid
-Return: a vector saves distance value of each neighboring grid
+       pNearAllCloud - the NEARBY point clouds (the NEARBY ground, obstacle and boundary points)
+	   vNearGroundIdxs - the NEARBY ground grid index
+	   oPastViewPoint - the past viewpoint (past robot position, also the )
+	   iNodeTimes - number of node generations
+Output: update the total confidence value (actually the visiTerm) of the given nearby grid
+Return: none
 Others: none
 *************************************************/
 void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
@@ -794,7 +808,6 @@ void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	//**********Measurement item************
 	//compute the visibility based on the history of view points
 	std::vector<bool> vVisableRes = oGHPRer.ComputeVisibility(*pNearAllCloud, oPastViewPoint);
-
 	
 	//**********Incremental item************
 	//fv(p) = fv(n)  
@@ -877,23 +890,24 @@ Others: none
 
 /*************************************************
 Function: QualityTerm
-Description: the function is to compute the distance feature to the confidence value
-Calls: ComputeCenter
-GaussianKernel
+Description: the function is to measuer the scanning quality of point clouds
+Calls: HausdorffDimension class
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
-oRobotPoint - the location of the robot
-vNearbyGridIdxs - the neighboring grids based on the input robot location
-vTravelCloud - the travelable point clouds (the ground point clouds)
-vGridTravelPsIdx - the index of point within each grid to total travelable point clouds
-Output: the distance term value of each neighboring grid
-Return: a vector saves distance value of each neighboring grid
+	   pObstacleCloud - the given obstacle point clouds to be measured
+       vObstNodeTimes - the iNodeTime value corresponding to pObstacleCloud
+       vObstlPntMapIdx - the grid index of each obstacle point
+	   oExtendGridMap - grid map
+	   vNearByIdxs - nearby grid index of robot
+       iNodeTime - the current times of node generations
+       iSmplNum - number of seeds, the seed is randonly selected 
+Output: update the qualTerm value of the given nearby grid
+Return: none
 Others: none
 *************************************************/
 void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
-	                                                   float & fCurrentAcc,
 	                                 const PCLCloudXYZPtr & pObstacleCloud,
                                    const std::vector<int> & vObstNodeTimes,
                     const std::vector<std::vector<int> > & vObstlPntMapIdx,
@@ -924,7 +938,6 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
     //construct a candidates
     //choose a grid (randomly), which is equal to down sampling
     std::vector<int> vSelectedGrids = GetRandom(vNonGrndGrids.size(), iSmplNum);
-    std::vector<float> vAccVecs;
 
     //compute the dimension feature of each selected obstacle grid
     for(int is = 0; is != vSelectedGrids.size(); ++is){
@@ -933,7 +946,6 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
         
         //point clouds to be measured
 	    PCLCloudXYZPtr pMeasuredCloud(new PCLCloudXYZ);
-	    PCLCloudXYZPtr pAccCloud(new PCLCloudXYZ);
 
 	    //compute the local region based on the selected grid
         std::vector<int> vMeasuredGridIdx; 
@@ -950,12 +962,8 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 		    if(vConfidenceMap[iOneGridIdx].label == 1 || vConfidenceMap[iOneGridIdx].label == 3){
 
 			    for (int j = 0; j != vObstlPntMapIdx[iOneGridIdx].size(); ++j){
-
-			    	   
         	        if(vObstNodeTimes[vObstlPntMapIdx[iOneGridIdx][j]] == iNodeTime)//if it is recorded at current node time
         	    	    pMeasuredCloud->points.push_back(pObstacleCloud->points[vObstlPntMapIdx[iOneGridIdx][j]]);
-                    if(iOneGridIdx == iOneSlctIdx)
-        	    	    pAccCloud->points.push_back(pObstacleCloud->points[vObstlPntMapIdx[iOneGridIdx][j]]);
 
         	    }//end for j
 	
@@ -981,28 +989,6 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	    fHausRes = fHausRes - 2.0f;
 	    if(fHausRes < 0.0)
 	       fHausRes = -1.5f*fHausRes;
-
-        //accacury
-	    if(pAccCloud->size()>4){
-	    	
-	        pcl::PCA<pcl::PointXYZ> oPCA;
-	        oPCA.setInputCloud(pAccCloud);
-
-	        Eigen::Vector3f eigenvalues = oPCA.getEigenValues();
-	        float fAcc = sqrt(eigenvalues[2]);
-	        if(fAcc >= 0.0 && fAcc< 100.0){//to defend -NAN
-	        std::cout<< "fAcc: " << fAcc << std::endl;
-	        vAccVecs.push_back(fAcc);
-	        }
-
-        }
-
-        float fTotalAcc = 0.0;
-        for(int i = 0; i != vAccVecs.size(); ++i)
-            fTotalAcc = fTotalAcc + vAccVecs[i];
-        
-        if(vAccVecs.size())
-           fCurrentAcc = fTotalAcc/float(vAccVecs.size());
 
 	    //record each measured point clouds for test only
         //OutputQualityClouds(*pMeasuredCloud, fHausRes);
@@ -1132,19 +1118,17 @@ Others: none
 
 /*************************************************
 Function: ComputeTotalCoffidence
-Description: the function is to compute the distance feature to the confidence value
-Calls: ComputeCenter
-       GaussianKernel
-Called By: main function of project 
+Description: the function is to compute the total confidence value (totalValue in ConfidenceValue)
+Calls: none
+Called By: OcclusionTerm()
+           BoundTerm()
+           DistanceTerm()
 Table Accessed: none
 Table Updated: none
-Input: vConfidenceMap - the confidence map (grid map)
-	   oRobotPoint - the location of the robot  
-	   vNearbyGridIdxs - the neighboring grids based on the input robot location
-	   vTravelCloud - the travelable point clouds (the ground point clouds)
-	   vGridTravelPsIdx - the index of point within each grid to total travelable point clouds  
-Output: the distance term value of each neighboring grid
-Return: a vector saves distance value of each neighboring grid
+Input: vConfidenceMap - confindence variance 
+	   iQueryIdx - one query grid
+Output: u
+Return: update the total confidence value
 Others: none
 *************************************************/
 void Confidence::ComputeTotalCoffidence(std::vector<ConfidenceValue> & vConfidenceMap, 
@@ -1172,25 +1156,24 @@ Calls: none
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: vNearbyGridIdxs - the neighboring grid of the current robot location
-Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
+Input: vConfidenceMap - the confidence map (grid map)
+	   vNearbyGridIdxs - the nearby grids 
+	   oExtendGridMap - grid map for searching
+	   iNodeTimes -  the current times of node generations
+Output: label the reachable grid if possible
 Return: none
-Others: point with label 2 is queried and changed one by one during implementing function
-        point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
+Others:  //**status of grid in region grow**
+	     //-1 indicates it is an unknown grid
+	     //0 indicates this grid is ground but not reachable now
+         //1 indicates this grid is a travelable region grid
+	     //2 is the new scanned ground grids (input) without growing calculation (in this time)
+	     //3 indicates the grid has been computed
+	     //4 indicates this grid is a off groud grid (not reachable forever)
 *************************************************/
 void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 	                        const std::vector<MapIndex> & vNearbyGridIdxs,
 								        const ExtendedGM & oExtendGridMap,
 								                   const int & iNodeTimes){
-
-    //status of grid in region grow
-	//-1 indicates it is an unknown grid
-	//0 indicates this grid is ground but not reachable now
-    //1 indicates this grid is a travelable region grid
-	//2 is the new scanned ground grids (input) without growing calculation (in this time)
-	//3 indicates the grid has been computed
-	//4 indicates this grid is a off groud grid (not reachable forever)
-
 
     //the grid need grow in MAP index (No neighboorhood local index)
 	std::vector<int> vNeedGrowGridIdx;
@@ -1286,19 +1269,19 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 }
 
 
-
 /*************************************************
-Function: RegionGrow
+Function: CheckIsNewScannedGrid
 Description: this function is to find the reachable grid based on current robot location
 Calls: none
-Called By: main function of project
+Called By: FindLocalMinimum()
 Table Accessed: none
 Table Updated: none
-Input: vNearbyGridIdxs - the neighboring grid of the current robot location
-Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
-Return: none
-Others: point with label 2 is queried and changed one by one during implementing function
-        point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
+Input: iCurrNodeTime - the current times of node generations, which is equal to iNodeTimes in other functions 
+	   vConfidenceMap - the confidence map (grid map)
+	   iQueryIdx - the query gird index
+Output: check the grid is a new scanning ground grid or not
+Return: a binary result, true value indicates the grid is new scanning ground grid
+Others: none
 *************************************************/
 inline bool Confidence::CheckIsNewScannedGrid(const int & iCurrNodeTime, 
 	                                          const std::vector<ConfidenceValue> & vConfidenceMap,
@@ -1321,17 +1304,20 @@ inline bool Confidence::CheckIsNewScannedGrid(const int & iCurrNodeTime,
 }
 
 /*************************************************
-Function: RegionGrow
-Description: this function is to find the reachable grid based on current robot location
+Function: FindLocalMinimum
+Description: this function is to find the LOCAL minimum value of confidence map 
 Calls: none
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: vNearbyGridIdxs - the neighboring grid of the current robot location
-Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
+Input: vNodeIdxs - node grid index (each grid would most have one node)
+	   vNodeClouds - the positions of nodes
+	   vConfidenceMap - the confidence map to generate node
+	   oExtendGridMap - grid map
+	   iCurrNodeTime - the current node times
+Output: nodes in local minimum value (by given a radius)
 Return: none
-Others: point with label 2 is queried and changed one by one during implementing function
-        point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
+Others: none
 *************************************************/
 void Confidence::FindLocalMinimum(std::vector<int> & vNodeIdxs,
 	                              std::vector<pcl::PointXYZ> & vNodeClouds,
@@ -1452,18 +1438,17 @@ void Confidence::Normalization(std::vector<float> & vFeatures){
 
 /*************************************************
 Function: OutputOcclusionClouds
-Description: constrcution function for TopologyMap class
+Description: output a point cloud for debug and test
 Calls: all member functions
-Called By: main function of project
+Called By: OcclusionTerm()
 Table Accessed: none
 Table Updated: none
-Input: global node,
-       privare node
-       flag of generating output file
-       original frame value
-Output: none
+Input: vCloud - the test point cloud to be observed
+	   vVisableRes - the visibility result of each point
+	   viewpoint - the viewpoint position
+Output: a point cloud in txt file
 Return: none
-Others: the HandFindLocalMinimumlePointClouds is the kernel function
+Others: none
 *************************************************/
 
 void Confidence::OutputOcclusionClouds(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
@@ -1503,19 +1488,17 @@ void Confidence::OutputOcclusionClouds(const pcl::PointCloud<pcl::PointXYZ> & vC
 
 
 /*************************************************
-Function: OutputOcclusionClouds
-Description: constrcution function for TopologyMap class
+Function: OutputQualityClouds
+Description: this function is to check whether the quality measured result is right
 Calls: all member functions
-Called By: main function of project
+Called By: QualityTerm()
 Table Accessed: none
 Table Updated: none
-Input: global node,
-       privare node
-       flag of generating output file
-       original frame value
-Output: none
+Input: vCloud - the test point clouds present the raw measuring points
+	   fHausRes - the corresponding Hausdorff measured results
+Output: a point cloud in txt file
 Return: none
-Others: the HandFindLocalMinimumlePointClouds is the kernel function
+Others: none
 *************************************************/
 void Confidence::OutputQualityClouds(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
 	                                                       const float & fHausRes){

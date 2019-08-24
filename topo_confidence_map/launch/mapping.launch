@@ -1,7 +1,7 @@
 <launch>
 
-  <arg name="fileoutputpath" default="/home/lx/tmp/husky/param/"/>
-
+  <arg name="fileoutputpath" default="/home/ludy/"/>
+  
   <arg name="odomintopic" default="/odometry/filtered"/>
   <arg name="groundpctpc" default="/ground_points" />
   <arg name="boundarypctpc" default="/boundary_points" />
@@ -13,17 +13,15 @@
   <!--arg name="freshoctomapfreq" default="0.5" /-->
   <arg name="pointframesmpl" default="5" />
   <arg name="pastduration" default="8.0" />
-  <arg name="pastviewzoff" default="0.451"/>
+  <arg name="pastviewzoff" default="0.451"/> 
 
-  <arg name="mapmaxrange" default="50" />
+  <arg name="mapmaxrange" default="25" />
   <arg name="mapminz" default="-5.0" />
   <arg name="mapmaxz" default="20.0" />
   <arg name="mapresolution" default="0.2" />
   <arg name="mapframeid" default="odom" />
 
-  <!-- robotlocalr 8.0 10.0 12.0-->
   <arg name="robotlocalr" default="8.0"/>
-  <!-- nodeminirate 0.3 0.5 -->
   <arg name="nodeminirate" default="0.3" />
   <arg name="initialr" default="4.5" />
 
@@ -31,7 +29,6 @@
 
   <!--parameter of three term travel term, bound term and visible term, respectively-->
   <!--traversweight + exploreWeight = 1, and disWeight + boundWeight = 1 /-->
-  <!-- 0.9 - 1/0, 1/0 - 0.6 -->
   <arg name="traversweight" default="0.9" /><!--m_fExploreWeight = 1.0 - f_fTraversWeight;/-->
   <arg name="traversdisweight" default="0.6" /><!-- m_fBoundWeight = 1.0 - f_fDisWeight;/-->
 
@@ -43,9 +40,9 @@
 
     <!-- maximum range to integrate (speedup!) -->
     <!--param name="sensor_model/max_range" value="$(arg mapmaxrange)" /-->
-    <!-- max/min height for occupancy map, should be in meters -->
+    <!-- max/min height for occupancy map, should be in meters --> 
     <!--param name="pointcloud_max_z" value="$(arg mapmaxz)" /-->
-    <!--param name="pointcloud_min_z" value="$(arg mapminz)" /-->
+    <!--param name="pointcloud_min_z" value="$(arg mapminz)" /--> 
 
     <!--param name="resolution" value="(arg mapresolution)" /-->
     <!-- data source to integrate (PointCloud2) -->
@@ -99,5 +96,8 @@
 
   <!-- Launch RViz with the demo configuration -->
   <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find grid_map_demos)/rviz/octomap_to_gridmap_demo.rviz" /-->
-
+  
 </launch>
+
+
+
