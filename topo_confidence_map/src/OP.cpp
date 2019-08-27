@@ -157,35 +157,22 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	oPastOdomTwoD.y = vOdoms.front().y;
 	oPastOdomTwoD.z = 0.0;
 
-    
-    //if it is at the orginal point
-	if(m_vAllNodes.size() == 1){
-        //if the confidence map at original location has been computed enough
-        int iRemain = iFirstTripThr - iProcessFrame;
-        ROS_INFO("Initial the first goal: remain confidence computed time is: [%d].", iRemain);
-        //"<=" rather than "=" is to defend sampling error
-		if(iRemain <= 0)
-			return true;
+	//compute the distance difference between current odom and current target node
+	float fDisDiff = TwoDDistance(oCurrOdomTwoD, oGoal);
 
+	if(fDisDiff <= fDisDiffThr){
+		std::cout << "fDisDiff: " << fDisDiff << " fDisDiffThr: "<< fDisDiffThr << std::endl;
+		return true;
 	}
-    
-    //normal situation
-	if(m_vAllNodes.size() > 1){
-		//compute the distance difference between current odom and current target node
-		float fDisDiff = TwoDDistance(oCurrOdomTwoD, oGoal);
+    //check shock (shock is a situation in navigation pakcage)
+    //shock may happen when robot is too close to the obstacle 
+	float fDisShock = TwoDDistance(oCurrOdomTwoD, oPastOdomTwoD);
 
-		if(fDisDiff <= fDisDiffThr)
-			return true;
-        //check shock (shock is a situation in navigation pakcage)
-        //shock may happen when robot is too close to the obstacle 
-		float fDisShock = TwoDDistance(oCurrOdomTwoD, oPastOdomTwoD);
-
-		if(vOdoms.size() >= iShockNumThr && fDisShock <= 0.5){
-		    ROS_INFO("robot is standing at same place up to a given time, thereby a new goal is generated for it");	
-			return true;
-        }
-	}
-
+	if(vOdoms.size() >= iShockNumThr && fDisShock <= 0.5){
+		ROS_INFO("robot is standing at same place up to a given time, thereby a new goal is generated for it");	
+		return true;
+    }
+	
 	return false;
 
 }

@@ -46,6 +46,7 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_pObstacleCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_iTrajFrameNum(0),
 	                     m_iRecordPCNum(0),
+	                     m_iCrrntGoalIdx(0),
 	                     m_iGroundFrames(0),
 	                     m_iBoundFrames(0),
 	                     m_iObstacleFrames(0),
@@ -65,6 +66,17 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 
 	//read parameters
 	ReadLaunchParams(nodeHandle);
+
+    //read point cloud data
+    std::vector<std::vector<double>> vGoalData;
+    ReadMatrix(m_sInFileName,vGoalData);
+    for(int i = 0; i != vGoalData.size(); ++i){
+        pcl::PointXYZ oOnePoint;
+        oOnePoint.x = vGoalData[i][0];
+        oOnePoint.y = vGoalData[i][1];
+        oOnePoint.z = vGoalData[i][2];
+        vGoalCloud.push_back(oOnePoint);
+    }
 
 	//subscribe topic 
 	//m_oOctoMapClient = nodeHandle.serviceClient<octomap_msgs::GetOctomap>(m_oOctomapServiceTopic);
@@ -127,7 +139,7 @@ bool TopologyMap::ReadLaunchParams(ros::NodeHandle & nodeHandle) {
 
 	//output file name
 	nodeHandle.param("file_outputpath", m_sFileHead, std::string("./"));
-
+    nodeHandle.param("file_inputpath", m_sInFileName, std::string("./data.txt"));
 	//input topic
 	nodeHandle.param("odom_in_topic", m_sOdomTopic, std::string("/odometry/filtered"));
 
@@ -337,6 +349,8 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
     m_oAstar.InitAstarTravelMap(m_oGMer.m_oFeatureMap);
 
 	m_bGridMapReadyFlag = true;
+
+	m_oNodeGoal = oRobotPos;
 
 }
 
@@ -689,62 +703,31 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 			}//end else
 		}//end if m_bGridMapReadyFlag
      
-        //if move in local way
-		if(m_bAnchorGoalFlag){
-            //near
-            float fTouchAnchorGoal = false;
-            fTouchAnchorGoal =  m_oOPSolver.NearGoal(m_vOdomShocks,m_iShockNum, m_iComputedFrame, 
-        	                                         m_vAncherGoals[m_iAncherCount], 2.0, 10);
-            //
-            if(fTouchAnchorGoal){
 
-            	m_iAncherCount++;
 
-            	if(m_iAncherCount >= m_vAncherGoals.size()){
-                   m_bAnchorGoalFlag = false;
-                   m_iAncherCount = 0;
-            	}
-
-            }
-
-		}
-        
-		float fTouchNodeGoal = false;
-        //if move in global way
-		if(!m_bAnchorGoalFlag){
-            //check the robot is near the target node
-            //if the robot is close to the target or the robot is standing in place in a long time
-            fTouchNodeGoal =  m_oOPSolver.NearGoal(m_vOdomShocks, 
+        //check the robot is near the target node
+        //if the robot is close to the target or the robot is standing in place in a long time
+        bool fTouchNodeGoal =  m_oOPSolver.NearGoal(m_vOdomShocks, 
         	                                        m_iShockNum,
         	                                        m_iComputedFrame, 
         	                                        m_oNodeGoal, 2.0, 10);
 
-		}
         
         //if it arrivals at the target node
         if(fTouchNodeGoal){
-            
-			//get the new nodes
-			std::vector<int> vNewNodeIdx;
-			std::vector<pcl::PointXYZ> vNodeClouds;
-			m_oCnfdnSolver.FindLocalMinimum(vNewNodeIdx, vNodeClouds,
-	                                        m_vConfidenceMap, m_oGMer, m_iNodeTimes);
 
-			//get new nodes
-			m_oOPSolver.GetNewNodeSuppression(m_vConfidenceMap, 
-				                                   vNewNodeIdx, 
-				                                   vNodeClouds, 1.0);
 
-            //*******use op solver*********
-			if(m_oOPSolver.UpdateNodes(m_vConfidenceMap,0.7,0.8))
-				//use greedy based method
-				m_oOPSolver.GTR(m_vOdomViews.back(),m_vConfidenceMap);
-			else
-				//use branch and bound based method
-				m_oOPSolver.BranchBoundMethod(m_vOdomViews.back(),m_vConfidenceMap);
+			m_oNodeGoal.x = vGoalCloud.points[m_iCrrntGoalIdx].x;
+			m_oNodeGoal.y = vGoalCloud.points[m_iCrrntGoalIdx].y;
+			m_oNodeGoal.z = vGoalCloud.points[m_iCrrntGoalIdx].z;
+			std::cout<<"m_oNodeGoal.x: "<<m_oNodeGoal.x<<" m_iCrrntGoalIdx.x: "<<vGoalCloud.points[m_iCrrntGoalIdx].x;
+			std::cout<<"m_oNodeGoal.y: "<<m_oNodeGoal.y<<" m_iCrrntGoalIdx.y: "<<vGoalCloud.points[m_iCrrntGoalIdx].y;
+			std::cout<<"m_oNodeGoal.z: "<<m_oNodeGoal.z<<" m_iCrrntGoalIdx.z: "<<vGoalCloud.points[m_iCrrntGoalIdx].z;
+
+		    m_iCrrntGoalIdx++;
 		    
 		    //output node
-		    m_oOPSolver.OutputGoalPos(m_oNodeGoal);
+		    //m_oOPSolver.OutputGoalPos(m_oNodeGoal);
 
 
 		    if(!m_bOutNodeFileFlag){
@@ -763,91 +746,19 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 
             m_oNodeFile.close();
 
-		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
-		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
 
-
-		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+		    std::cout<< "remain unvisited nodes are " << vGoalCloud.points.size() - m_iCrrntGoalIdx << std::endl;
 
 
             //clear old data of last trip
 		    m_vOdomShocks = std::queue<pcl::PointXYZ>();
 
-		    //if there are still some regions to explore
-            //compute astar path for current target point
-            if(vUnvisitedNodes.size()){
-            	
-            	//update travelable map
-		        m_oAstar.UpdateTravelMap(m_oGMer.m_oFeatureMap, m_vConfidenceMap);
-                //get raw astar path point clouds
-                pcl::PointCloud<pcl::PointXYZ>::Ptr pAstarCloud(new pcl::PointCloud<pcl::PointXYZ>);
-                pcl::PointCloud<pcl::PointXYZ>::Ptr pAttractorCloud(new pcl::PointCloud<pcl::PointXYZ>);
-                std::vector<float> vQualityFeature;
-                
-                //compute astar path
-		        bool bPathOptmFlag = m_oAstar.GetPath(pAttractorCloud, 
-		                                              vQualityFeature,
-		                                              pAstarCloud, 
-	                                                  m_oGMer,
-	                                                  m_vConfidenceMap,
-	                                                  m_vOdomViews.back(), m_oNodeGoal, false);
+		    pcl::PointXYZ oRealGoalPoint;
 
-                //if the goal has a very clear and credible path
-		        if(bPathOptmFlag){
-
-                    pcl::PointCloud<pcl::PointXY>::Ptr pAttractorSeq(new pcl::PointCloud<pcl::PointXY>);
-		            //sort the controls from max to min
-		        
-	                oLclPthOptimer.SortFromBigtoSmall(pAttractorSeq,
-	                                              pAttractorCloud, 
-		                                          vQualityFeature);
-
-	                ////generate new local path
-	                m_vAncherGoals.clear();
-	                
-	                m_bAnchorGoalFlag = oLclPthOptimer.NewLocalPath(m_vAncherGoals,
-	                                                            pAttractorSeq, 
-		                                                        vQualityFeature,
-		                                                        pAstarCloud, 
-	                                                            m_oGMer,
-	                                                            m_vConfidenceMap,1.5, 1);
-
-                    //print to screen
-                    if(m_bAnchorGoalFlag)
-                    	std::cout<<"walking in local curve. "<<std::endl;
-
-		            //PublishPointCloud(*pAttractorCloud);//for test only
-		            //PublishPointCloud(m_vAncherGoals);//for test only
-
-		        }//end if bPathOptmFlag
-
-
-		    }//end if vUnvisitedNodes.size()
-            
-            //begin the next trip
-            if(m_oOPSolver.CheckNodeTimes())
-            	m_iNodeTimes++;
+		    oRealGoalPoint.x = m_oNodeGoal.x;
+            oRealGoalPoint.y = m_oNodeGoal.y;
+		    oRealGoalPoint.z = m_oNodeGoal.z;
 		    
-		}//end if m_oOPSolver.NearGoal
-
-		pcl::PointXYZ oRealGoalPoint;
-
-        //send generated goal
-		if(m_iNodeTimes > 0){
-			
-            //get goal from achor vector
-            if(m_bAnchorGoalFlag){
-
-            	oRealGoalPoint.x = m_vAncherGoals.points[m_iAncherCount].x;
-                oRealGoalPoint.y = m_vAncherGoals.points[m_iAncherCount].y;
-                oRealGoalPoint.z = m_vAncherGoals.points[m_iAncherCount].z;
-			//get goal from node
-		    }else{
-                oRealGoalPoint.x = m_oNodeGoal.x;
-                oRealGoalPoint.y = m_oNodeGoal.y;
-		        oRealGoalPoint.z = m_oNodeGoal.z;
-		    }
-            
 		    //publish goal
             PublishGoalOdom(oRealGoalPoint);
         }
