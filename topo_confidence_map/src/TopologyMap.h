@@ -13,7 +13,7 @@
 #include "pcl_ros/transforms.h"  
 #include <pcl_conversions/pcl_conversions.h>
 
-
+#include "readtxt.h"
 #include "Astar.h"
 #include "LocalPathOptimization.h"
 
@@ -184,6 +184,8 @@ class TopologyMap{
 
   std::string m_sObstacleTopic; //the topic name of targeted odometry (robot trajectory)
 
+  std::string m_sInFileName;//input the goal position of robot without planning
+
   //**output topics related**
 
   ros::Publisher m_oGridMapPublisher;//! Grid map publisher.
@@ -233,6 +235,9 @@ class TopologyMap{
 
   unsigned int m_iNodeTimes;//the times of node to be visited
 
+  int m_iInputNodeSmp;//sampling the input node
+
+  double m_dNearNodeThr;//the threshold of the distance between robot and a given node
   //**point cloud related**
   //the positions of robot
   std::queue<pcl::PointXYZ> m_vOdomViews;//I dont think it is necessary to use a circle vector
@@ -281,6 +286,10 @@ class TopologyMap{
 
   //count visited anchor in a trip
   int m_iAncherCount;
+
+  pcl::PointCloud<pcl::PointXYZ> vGoalCloud;
+
+  int m_iCrrntGoalIdx;
   
 };
 

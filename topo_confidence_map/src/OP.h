@@ -49,14 +49,14 @@ public:
 	bool NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	                              const int & iShockNumThr,
                                  const int & iProcessFrame,
-	                               float fDisDiffThr = 0.5,
+	                               double dDisDiffThr = 0.5,
 	                                int iFirstTripThr = 10);
 
 	bool NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	                              const int & iShockNumThr,
                                  const int & iProcessFrame,
                                const pcl::PointXYZ & oGoal,
-	                               float fDisDiffThr = 0.5,
+	                               double dDisDiffThr = 0.5,
 	                                int iFirstTripThr = 10);
 
 	//check the nodetime can be increased
