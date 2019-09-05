@@ -2,7 +2,7 @@
 
   <arg name="fileoutputpath" default="/home/lx/tmp/ros_output/"/>
   <arg name="fileinputpath" default="/home/lx/tmp/Node_.txt"/>
-  <arg name="nodessampling" default="2" />
+  <arg name="nodessampling" default="1" />
   <arg name="nearnodedis" default="0.1" />
   
   <arg name="odomintopic" default="/odometry/filtered"/>
@@ -28,7 +28,7 @@
   <arg name="nodeminirate" default="0.3" />
   <arg name="initialr" default="4.5" />
 
-  <arg name="shockduration" default="8.0"/>
+  <arg name="shockduration" default="200.0"/>
 
   <!--parameter of three term travel term, bound term and visible term, respectively-->
   <!--traversweight + exploreWeight = 1, and disWeight + boundWeight = 1 /-->
