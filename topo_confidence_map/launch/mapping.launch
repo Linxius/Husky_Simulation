@@ -1,9 +1,6 @@
 <launch>
 
-  <arg name="fileoutputpath" default="/home/lx/tmp/ros_output/"/>
-  <arg name="fileinputpath" default="/home/lx/tmp/Node_.txt"/>
-  <arg name="nodessampling" default="1" />
-  <arg name="nearnodedis" default="0.1" />
+  <arg name="fileoutputpath" default="/home/ludy/"/>
   
   <arg name="odomintopic" default="/odometry/filtered"/>
   <arg name="groundpctpc" default="/ground_points" />
@@ -28,7 +25,7 @@
   <arg name="nodeminirate" default="0.3" />
   <arg name="initialr" default="4.5" />
 
-  <arg name="shockduration" default="200.0"/>
+  <arg name="shockduration" default="8.0"/>
 
   <!--parameter of three term travel term, bound term and visible term, respectively-->
   <!--traversweight + exploreWeight = 1, and disWeight + boundWeight = 1 /-->
@@ -57,11 +54,6 @@
   <node pkg="topo_confidence_map" type="topo_confidence_map" name="topology_map" output="screen" >
 
     <param name="file_outputpath" type="string" value="$(arg fileoutputpath)" />
-    <param name="file_inputpath" type="string" value="$(arg fileinputpath)" />
-    
-    <!--node based paras-->
-    <param name="nodes_sampling" type="int" value="$(arg nodessampling)" />
-    <param name="nearnode_dis" type="double" value="$(arg nearnodedis)" />
 
     <!--topic input-->
     <param name="odom_in_topic" type="string" value="$(arg odomintopic)" />

@@ -13,7 +13,7 @@
 #include "pcl_ros/transforms.h"  
 #include <pcl_conversions/pcl_conversions.h>
 
-#include "readtxt.h"
+
 #include "Astar.h"
 #include "LocalPathOptimization.h"
 
@@ -165,10 +165,6 @@ class TopologyMap{
   bool m_bOutPCFileFlag;//whether the point cloud recording file got a full name or not 
   std::ofstream m_oPCFile;
 
-  std::stringstream m_sOutNodeFileName;///<full name of output txt that records the visited node position 
-  bool m_bOutNodeFileFlag;//whether the point cloud recording file got a full name or not 
-  std::ofstream m_oNodeFile;
-
   //input topics:
   ros::Subscriber m_oOdomSuber;//the subscirber is to hear (record) odometry from gazebo
 
@@ -183,8 +179,6 @@ class TopologyMap{
   std::string m_sBoundTopic; //the topic name of targeted odometry (robot trajectory)
 
   std::string m_sObstacleTopic; //the topic name of targeted odometry (robot trajectory)
-
-  std::string m_sInFileName;//input the goal position of robot without planning
 
   //**output topics related**
 
@@ -235,9 +229,6 @@ class TopologyMap{
 
   unsigned int m_iNodeTimes;//the times of node to be visited
 
-  int m_iInputNodeSmp;//sampling the input node
-
-  double m_dNearNodeThr;//the threshold of the distance between robot and a given node
   //**point cloud related**
   //the positions of robot
   std::queue<pcl::PointXYZ> m_vOdomViews;//I dont think it is necessary to use a circle vector
@@ -286,10 +277,6 @@ class TopologyMap{
 
   //count visited anchor in a trip
   int m_iAncherCount;
-
-  pcl::PointCloud<pcl::PointXYZ> vGoalCloud;
-
-  int m_iCrrntGoalIdx;
   
 };
 

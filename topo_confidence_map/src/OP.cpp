@@ -93,7 +93,7 @@ Others: none
 bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	                              const int & iShockNumThr,
                                  const int & iProcessFrame,
-                                        double dDisDiffThr,
+	                                     float fDisDiffThr,
 	                                     int iFirstTripThr){
 
 	pcl::PointXYZ oCurrOdomTwoD;
@@ -122,9 +122,8 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	if(m_vAllNodes.size() > 1){
 		//compute the distance difference between current odom and current target node
 		float fDisDiff = TwoDDistance(oCurrOdomTwoD, m_vAllNodes[m_iCurrNodeIdx].point);
-        double dfDisDiff = double(fDisDiff);
 
-        if(dfDisDiff <= dDisDiffThr)
+		if(fDisDiff <= fDisDiffThr)
 			return true;
         //check shock (shock is a situation in navigation pakcage)
         //shock may happen when robot is too close to the obstacle 
@@ -145,7 +144,7 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	                              const int & iShockNumThr,
                                  const int & iProcessFrame,
                                const pcl::PointXYZ & oGoal,
-	                                     double dDisDiffThr,
+	                                     float fDisDiffThr,
 	                                     int iFirstTripThr){
 
 	pcl::PointXYZ oCurrOdomTwoD;
@@ -158,21 +157,35 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 	oPastOdomTwoD.y = vOdoms.front().y;
 	oPastOdomTwoD.z = 0.0;
 
-	//compute the distance difference between current odom and current target node
-	float fDisDiff = TwoDDistance(oCurrOdomTwoD, oGoal);
-    double dfDisDiff = double(fDisDiff);
-    if(dfDisDiff <= dDisDiffThr)
-		return true;
-	
-    //check shock (shock is a situation in navigation pakcage)
-    //shock may happen when robot is too close to the obstacle 
-	float fDisShock = TwoDDistance(oCurrOdomTwoD, oPastOdomTwoD);
+    
+    //if it is at the orginal point
+	if(m_vAllNodes.size() == 1){
+        //if the confidence map at original location has been computed enough
+        int iRemain = iFirstTripThr - iProcessFrame;
+        ROS_INFO("Initial the first goal: remain confidence computed time is: [%d].", iRemain);
+        //"<=" rather than "=" is to defend sampling error
+		if(iRemain <= 0)
+			return true;
 
-	if(vOdoms.size() >= iShockNumThr && fDisShock <= 0.5){
-		ROS_INFO("robot is standing at same place up to a given time, thereby a new goal is generated for it");	
-		return true;
-    }
-	
+	}
+    
+    //normal situation
+	if(m_vAllNodes.size() > 1){
+		//compute the distance difference between current odom and current target node
+		float fDisDiff = TwoDDistance(oCurrOdomTwoD, oGoal);
+
+		if(fDisDiff <= fDisDiffThr)
+			return true;
+        //check shock (shock is a situation in navigation pakcage)
+        //shock may happen when robot is too close to the obstacle 
+		float fDisShock = TwoDDistance(oCurrOdomTwoD, oPastOdomTwoD);
+
+		if(vOdoms.size() >= iShockNumThr && fDisShock <= 0.5){
+		    ROS_INFO("robot is standing at same place up to a given time, thereby a new goal is generated for it");	
+			return true;
+        }
+	}
+
 	return false;
 
 }
@@ -433,10 +446,7 @@ void OP::GetNewNodeSuppression(const std::vector<ConfidenceValue> & vConfidenceM
                 //visited or not
                 oNewNode.visitedFlag = false;
 			    //wide or not
-			    if(oNewNode.parentIdx != 0)
-			    	oNewNode.wideFlag = IsWideGrid(vConfidenceMap, vNewNodeIdxs[i]);
-			    else
-			    	oNewNode.wideFlag = false;
+			    oNewNode.wideFlag = true;
 	            //get the grid idx of new node
 			    m_vAllNodes.push_back(oNewNode);
 			    
@@ -660,9 +670,13 @@ bool OP::GTR(const pcl::PointXYZ & oCurOdom,
 		int iTargetIdx = vPlanNodeIdxs[i];
 
 		//cost function which considers the reward and cost of node
-		float fPairMeasure = ObjectiveFunction(vConfidenceMap,
-			                                   m_vAllNodes[m_iCurrNodeIdx], 
-			                                   m_vAllNodes[iTargetIdx]);
+        float fPairMeasure = TwoDDistance(m_vAllNodes[m_iCurrNodeIdx].point, 
+			                              m_vAllNodes[iTargetIdx].point);
+
+
+		//float fPairMeasure = ObjectiveFunction(vConfidenceMap,
+		//	                                   m_vAllNodes[m_iCurrNodeIdx], 
+		//	                                   m_vAllNodes[iTargetIdx]);
 			   
 		//find the shorest route
 		if (fPairMeasure < fMinMeasure) {
