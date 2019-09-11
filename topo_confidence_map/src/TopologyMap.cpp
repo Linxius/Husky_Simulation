@@ -980,7 +980,7 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 		}//end for i
 
         //record one frame of point clouds in txt file
-		//OutputScannedPCFile(vOneOCloud);
+		OutputScannedPCFile(vOneOCloud);
 
 		if(m_pObstacleCloud->points.size()>8000000){
 			SamplingPointClouds(m_pObstacleCloud, m_vObstlPntMapIdx, m_vObstNodeTimes);
