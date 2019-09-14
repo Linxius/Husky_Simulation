@@ -21,7 +21,7 @@
   <arg name="mapresolution" default="0.2" />
   <arg name="mapframeid" default="odom" />
 
-  <arg name="robotlocalr" default="10"/>
+  <arg name="robotlocalr" default="8.0"/>
   <arg name="nodeminirate" default="0.3" />
   <arg name="initialr" default="4.5" />
 
