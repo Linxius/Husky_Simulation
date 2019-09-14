@@ -21,11 +21,11 @@
   <arg name="mapresolution" default="0.2" />
   <arg name="mapframeid" default="odom" />
 
-  <arg name="robotlocalr" default="8.0"/>
+  <arg name="robotlocalr" default="10"/>
   <arg name="nodeminirate" default="0.3" />
   <arg name="initialr" default="4.5" />
 
-  <arg name="shockduration" default="10.0"/>
+  <arg name="shockduration" default="11.0"/>
 
   <!--parameter of three term travel term, bound term and visible term, respectively-->
   <!--traversweight + exploreWeight = 1, and disWeight + boundWeight = 1 /-->
