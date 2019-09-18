@@ -41,7 +41,7 @@ Others: m_oCnfdnSolver - (f_fSigma - the computed radius of robot
 *************************************************/
 TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     ros::NodeHandle & nodeHandle):
-                         m_oCnfdnSolver(12.0,4.2,5,0.6),
+                         m_oCnfdnSolver(12.0,4.2,5,0.9),
 	                     m_pBoundCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_pObstacleCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_iTrajFrameNum(0),

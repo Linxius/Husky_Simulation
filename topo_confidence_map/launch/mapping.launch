@@ -22,7 +22,7 @@
   <arg name="mapframeid" default="odom" />
 
   <arg name="robotlocalr" default="8.0"/>
-  <arg name="nodeminirate" default="0.3" />
+  <arg name="nodeminirate" default="0.5" />
   <arg name="initialr" default="4.5" />
 
   <arg name="shockduration" default="11.0"/>
