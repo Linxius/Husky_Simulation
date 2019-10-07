@@ -50,11 +50,16 @@
 #include <gazebo/sensors/SensorTypes.hh>
 #include <gazebo/plugins/RayPlugin.hh>
 
+/************    Linxius    ******************/
+#include <ignition/math.hh>
+
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/lock_guard.hpp>
 
+/************    Linxius    ******************/
+using namespace ignition;
 namespace gazebo
 {
 
