@@ -17,7 +17,7 @@ roslaunch_add_file_check(launch)
 
 add_executable(show_mesh src/show_mesh.cpp)
 target_link_libraries(show_mesh ${catkin_LIBRARIES})
-include_directories(/opt/ros/kinetic/include)
+include_directories(/opt/ros/melodic/include)
 install(
   DIRECTORY launch worlds urdf
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
